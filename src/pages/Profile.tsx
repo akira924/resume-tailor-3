@@ -1,0 +1,238 @@
+import { useState } from 'react'
+
+interface WorkExperience {
+  company: string
+  jobTitle: string
+  period: string
+  location: string
+  bulletPoints: string
+}
+
+interface Education {
+  institution: string
+  degreeMajor: string
+  period: string
+  location: string
+}
+
+interface Certification {
+  institution: string
+  certification: string
+  date: string
+}
+
+const emptyWork: WorkExperience = { company: '', jobTitle: '', period: '', location: '', bulletPoints: '' }
+const emptyEdu: Education = { institution: '', degreeMajor: '', period: '', location: '' }
+const emptyCert: Certification = { institution: '', certification: '', date: '' }
+
+const inputClass =
+  'w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-h)] text-sm placeholder:text-[var(--text)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-border)] transition-colors'
+
+const labelClass = 'block text-xs font-medium text-[var(--text)] mb-1'
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-lg font-semibold text-[var(--text-h)] border-b border-[var(--border)] pb-2 mb-4">
+      {children}
+    </h2>
+  )
+}
+
+function RemoveButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500/15 text-red-500 hover:bg-red-500/25 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+      title="Remove"
+    >
+      ✕
+    </button>
+  )
+}
+
+function AddButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full py-2 rounded-lg border border-dashed border-[var(--accent-border)] text-[var(--accent)] text-sm font-medium hover:bg-[var(--accent-bg)] transition-colors cursor-pointer"
+    >
+      {children}
+    </button>
+  )
+}
+
+export default function Profile() {
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [location, setLocation] = useState('')
+
+  const [linkedIn, setLinkedIn] = useState('')
+  const [gitHub, setGitHub] = useState('')
+  const [website, setWebsite] = useState('')
+
+  const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([{ ...emptyWork }])
+  const [educations, setEducations] = useState<Education[]>([{ ...emptyEdu }])
+  const [certifications, setCertifications] = useState<Certification[]>([{ ...emptyCert }])
+
+  function updateWork(index: number, field: keyof WorkExperience, value: string) {
+    setWorkExperiences(prev => prev.map((w, i) => (i === index ? { ...w, [field]: value } : w)))
+  }
+
+  function updateEdu(index: number, field: keyof Education, value: string) {
+    setEducations(prev => prev.map((e, i) => (i === index ? { ...e, [field]: value } : e)))
+  }
+
+  function updateCert(index: number, field: keyof Certification, value: string) {
+    setCertifications(prev => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
+      <h1 className="text-3xl font-bold text-[var(--text-h)] tracking-tight">Profile</h1>
+
+      {/* Personal Information */}
+      <section>
+        <SectionHeading>Personal Information</SectionHeading>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={labelClass}>Full Name</label>
+            <input type="text" className={inputClass} placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelClass}>Email Address</label>
+            <input type="text" className={inputClass} placeholder="john@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelClass}>Phone Number</label>
+            <input type="text" className={inputClass} placeholder="+1 (555) 123-4567" value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelClass}>Location</label>
+            <input type="text" className={inputClass} placeholder="New York, NY" value={location} onChange={e => setLocation(e.target.value)} />
+          </div>
+        </div>
+      </section>
+
+      {/* Online Presence */}
+      <section>
+        <SectionHeading>Online Presence</SectionHeading>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className={labelClass}>LinkedIn</label>
+            <input type="text" className={inputClass} placeholder="linkedin.com/in/johndoe" value={linkedIn} onChange={e => setLinkedIn(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelClass}>GitHub</label>
+            <input type="text" className={inputClass} placeholder="github.com/johndoe" value={gitHub} onChange={e => setGitHub(e.target.value)} />
+          </div>
+          <div>
+            <label className={labelClass}>Website</label>
+            <input type="text" className={inputClass} placeholder="johndoe.dev" value={website} onChange={e => setWebsite(e.target.value)} />
+          </div>
+        </div>
+      </section>
+
+      {/* Work Experience */}
+      <section>
+        <SectionHeading>Work Experience</SectionHeading>
+        <div className="space-y-4">
+          {workExperiences.map((work, i) => (
+            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4 space-y-3">
+              {workExperiences.length > 1 && <RemoveButton onClick={() => setWorkExperiences(prev => prev.filter((_, j) => j !== i))} />}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Company Name</label>
+                  <input type="text" className={inputClass} placeholder="Acme Corp" value={work.company} onChange={e => updateWork(i, 'company', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Job Title</label>
+                  <input type="text" className={inputClass} placeholder="Software Engineer" value={work.jobTitle} onChange={e => updateWork(i, 'jobTitle', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Period</label>
+                  <input type="text" className={inputClass} placeholder="Jan 2022 – Present" value={work.period} onChange={e => updateWork(i, 'period', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Location</label>
+                  <input type="text" className={inputClass} placeholder="San Francisco, CA" value={work.location} onChange={e => updateWork(i, 'location', e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <label className={labelClass}>Number of Bullet Points</label>
+                <input type="text" className={inputClass} placeholder="3" value={work.bulletPoints} onChange={e => updateWork(i, 'bulletPoints', e.target.value)} />
+              </div>
+            </div>
+          ))}
+          <AddButton onClick={() => setWorkExperiences(prev => [...prev, { ...emptyWork }])}>
+            + Add Work Experience
+          </AddButton>
+        </div>
+      </section>
+
+      {/* Education */}
+      <section>
+        <SectionHeading>Education</SectionHeading>
+        <div className="space-y-4">
+          {educations.map((edu, i) => (
+            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+              {educations.length > 1 && <RemoveButton onClick={() => setEducations(prev => prev.filter((_, j) => j !== i))} />}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Institution</label>
+                  <input type="text" className={inputClass} placeholder="MIT" value={edu.institution} onChange={e => updateEdu(i, 'institution', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Degree and Major</label>
+                  <input type="text" className={inputClass} placeholder="B.S. Computer Science" value={edu.degreeMajor} onChange={e => updateEdu(i, 'degreeMajor', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Period</label>
+                  <input type="text" className={inputClass} placeholder="Sep 2018 – May 2022" value={edu.period} onChange={e => updateEdu(i, 'period', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Location</label>
+                  <input type="text" className={inputClass} placeholder="Cambridge, MA" value={edu.location} onChange={e => updateEdu(i, 'location', e.target.value)} />
+                </div>
+              </div>
+            </div>
+          ))}
+          <AddButton onClick={() => setEducations(prev => [...prev, { ...emptyEdu }])}>
+            + Add Education
+          </AddButton>
+        </div>
+      </section>
+
+      {/* Certifications */}
+      <section>
+        <SectionHeading>Certifications</SectionHeading>
+        <div className="space-y-4">
+          {certifications.map((cert, i) => (
+            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+              {certifications.length > 1 && <RemoveButton onClick={() => setCertifications(prev => prev.filter((_, j) => j !== i))} />}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className={labelClass}>Institution</label>
+                  <input type="text" className={inputClass} placeholder="AWS" value={cert.institution} onChange={e => updateCert(i, 'institution', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Certification</label>
+                  <input type="text" className={inputClass} placeholder="Solutions Architect" value={cert.certification} onChange={e => updateCert(i, 'certification', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Date</label>
+                  <input type="text" className={inputClass} placeholder="Mar 2024" value={cert.date} onChange={e => updateCert(i, 'date', e.target.value)} />
+                </div>
+              </div>
+            </div>
+          ))}
+          <AddButton onClick={() => setCertifications(prev => [...prev, { ...emptyCert }])}>
+            + Add Certification
+          </AddButton>
+        </div>
+      </section>
+    </div>
+  )
+}
