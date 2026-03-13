@@ -26,7 +26,7 @@ const emptyEdu: Education = { institution: '', degreeMajor: '', period: '', loca
 const emptyCert: Certification = { institution: '', certification: '', date: '' }
 
 const inputClass =
-  'w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-h)] text-sm placeholder:text-[var(--text)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-border)] transition-colors'
+  'w-full px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text-h)] text-sm placeholder:text-[var(--text)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-border)] transition-colors'
 
 const labelClass = 'block text-xs font-medium text-[var(--text)] mb-1'
 
@@ -56,7 +56,7 @@ function AddButton({ onClick, children }: { onClick: () => void; children: React
     <button
       type="button"
       onClick={onClick}
-      className="w-full py-2 rounded-lg border border-dashed border-[var(--accent-border)] text-[var(--accent)] text-sm font-medium hover:bg-[var(--accent-bg)] transition-colors cursor-pointer"
+      className="w-full py-2 rounded-md border border-dashed border-[var(--accent-border)] text-[var(--accent)] text-sm font-medium hover:bg-[var(--accent-bg)] transition-colors cursor-pointer"
     >
       {children}
     </button>
@@ -90,13 +90,12 @@ export default function Profile() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
+    <div className="px-12 py-10 space-y-8">
       <h1 className="text-3xl font-bold text-[var(--text-h)] tracking-tight">Profile</h1>
 
-      {/* Personal Information */}
       <section>
         <SectionHeading>Personal Information</SectionHeading>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className={labelClass}>Full Name</label>
             <input type="text" className={inputClass} placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} />
@@ -116,7 +115,6 @@ export default function Profile() {
         </div>
       </section>
 
-      {/* Online Presence */}
       <section>
         <SectionHeading>Online Presence</SectionHeading>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -135,14 +133,13 @@ export default function Profile() {
         </div>
       </section>
 
-      {/* Work Experience */}
       <section>
         <SectionHeading>Work Experience</SectionHeading>
         <div className="space-y-4">
           {workExperiences.map((work, i) => (
-            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4 space-y-3">
+            <div key={i} className="relative rounded-md border border-[var(--border)] bg-[var(--bg)] p-5 space-y-3">
               {workExperiences.length > 1 && <RemoveButton onClick={() => setWorkExperiences(prev => prev.filter((_, j) => j !== i))} />}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className={labelClass}>Company Name</label>
                   <input type="text" className={inputClass} placeholder="Acme Corp" value={work.company} onChange={e => updateWork(i, 'company', e.target.value)} />
@@ -160,7 +157,7 @@ export default function Profile() {
                   <input type="text" className={inputClass} placeholder="San Francisco, CA" value={work.location} onChange={e => updateWork(i, 'location', e.target.value)} />
                 </div>
               </div>
-              <div>
+              <div className="max-w-xs">
                 <label className={labelClass}>Number of Bullet Points</label>
                 <input type="text" className={inputClass} placeholder="3" value={work.bulletPoints} onChange={e => updateWork(i, 'bulletPoints', e.target.value)} />
               </div>
@@ -172,14 +169,13 @@ export default function Profile() {
         </div>
       </section>
 
-      {/* Education */}
       <section>
         <SectionHeading>Education</SectionHeading>
         <div className="space-y-4">
           {educations.map((edu, i) => (
-            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+            <div key={i} className="relative rounded-md border border-[var(--border)] bg-[var(--bg)] p-5">
               {educations.length > 1 && <RemoveButton onClick={() => setEducations(prev => prev.filter((_, j) => j !== i))} />}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className={labelClass}>Institution</label>
                   <input type="text" className={inputClass} placeholder="MIT" value={edu.institution} onChange={e => updateEdu(i, 'institution', e.target.value)} />
@@ -205,14 +201,13 @@ export default function Profile() {
         </div>
       </section>
 
-      {/* Certifications */}
       <section>
         <SectionHeading>Certifications</SectionHeading>
         <div className="space-y-4">
           {certifications.map((cert, i) => (
-            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+            <div key={i} className="relative rounded-md border border-[var(--border)] bg-[var(--bg)] p-5">
               {certifications.length > 1 && <RemoveButton onClick={() => setCertifications(prev => prev.filter((_, j) => j !== i))} />}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className={labelClass}>Institution</label>
                   <input type="text" className={inputClass} placeholder="AWS" value={cert.institution} onChange={e => updateCert(i, 'institution', e.target.value)} />

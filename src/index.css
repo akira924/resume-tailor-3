@@ -3,15 +3,16 @@
 :root {
   --text: #6b6375;
   --text-h: #08060d;
-  --bg: #fff;
+  --bg: #ffffff;
+  --bg-surface: #f8f9fa;
   --border: #e5e4e7;
   --accent: #1e90ff;
-  --accent-bg: rgba(30, 144, 255, 0.1);
-  --accent-border: rgba(30, 144, 255, 0.5);
+  --accent-bg: rgba(30, 144, 255, 0.08);
+  --accent-border: rgba(30, 144, 255, 0.4);
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
-  font: 16px/1.5 var(--sans);
+  font: 16px/1.6 var(--sans);
   color-scheme: light dark;
   color: var(--text);
   background: var(--bg);
@@ -25,11 +26,12 @@
   :root {
     --text: #9ca3af;
     --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
+    --bg: #111218;
+    --bg-surface: #1a1b23;
+    --border: #2a2c36;
     --accent: #60a5fa;
-    --accent-bg: rgba(96, 165, 250, 0.15);
-    --accent-border: rgba(96, 165, 250, 0.5);
+    --accent-bg: rgba(96, 165, 250, 0.1);
+    --accent-border: rgba(96, 165, 250, 0.4);
   }
 }
 
@@ -41,11 +43,22 @@ body {
 }
 
 *::-webkit-scrollbar {
-  display: none;
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
 }
 
 * {
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 #root {
