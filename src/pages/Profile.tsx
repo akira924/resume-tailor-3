@@ -12,7 +12,6 @@ interface Education {
   institution: string
   degreeMajor: string
   period: string
-  location: string
 }
 
 interface Certification {
@@ -22,7 +21,7 @@ interface Certification {
 }
 
 const emptyWork: WorkExperience = { company: '', jobTitle: '', period: '', location: '', bulletPoints: '' }
-const emptyEdu: Education = { institution: '', degreeMajor: '', period: '', location: '' }
+const emptyEdu: Education = { institution: '', degreeMajor: '', period: '' }
 const emptyCert: Certification = { institution: '', certification: '', date: '' }
 
 const inputClass =
@@ -171,61 +170,55 @@ export default function Profile() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 items-start">
-        <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-          <SectionHeading action={<AddButton onClick={() => setEducations(prev => [...prev, { ...emptyEdu }])}>+ Add</AddButton>}>Education</SectionHeading>
-          <div className="space-y-4">
-            {educations.map((edu, i) => (
-              <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
-                {educations.length > 1 && <RemoveButton onClick={() => setEducations(prev => prev.filter((_, j) => j !== i))} />}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Institution</label>
-                    <input type="text" className={inputClass} placeholder="MIT" value={edu.institution} onChange={e => updateEdu(i, 'institution', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Degree and Major</label>
-                    <input type="text" className={inputClass} placeholder="B.S. Computer Science" value={edu.degreeMajor} onChange={e => updateEdu(i, 'degreeMajor', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Period</label>
-                    <input type="text" className={inputClass} placeholder="Sep 2018 – May 2022" value={edu.period} onChange={e => updateEdu(i, 'period', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Location</label>
-                    <input type="text" className={inputClass} placeholder="Cambridge, MA" value={edu.location} onChange={e => updateEdu(i, 'location', e.target.value)} />
-                  </div>
+      <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
+        <SectionHeading action={<AddButton onClick={() => setEducations(prev => [...prev, { ...emptyEdu }])}>+ Add</AddButton>}>Education</SectionHeading>
+        <div className="space-y-4">
+          {educations.map((edu, i) => (
+            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+              {educations.length > 1 && <RemoveButton onClick={() => setEducations(prev => prev.filter((_, j) => j !== i))} />}
+              <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr] gap-3">
+                <div>
+                  <label className={labelClass}>Institution</label>
+                  <input type="text" className={inputClass} placeholder="MIT" value={edu.institution} onChange={e => updateEdu(i, 'institution', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Degree and Major</label>
+                  <input type="text" className={inputClass} placeholder="B.S. Computer Science" value={edu.degreeMajor} onChange={e => updateEdu(i, 'degreeMajor', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Period</label>
+                  <input type="text" className={inputClass} placeholder="Sep 2018 – May 2022" value={edu.period} onChange={e => updateEdu(i, 'period', e.target.value)} />
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-          <SectionHeading action={<AddButton onClick={() => setCertifications(prev => [...prev, { ...emptyCert }])}>+ Add</AddButton>}>Certifications</SectionHeading>
-          <div className="space-y-4">
-            {certifications.map((cert, i) => (
-              <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
-                {certifications.length > 1 && <RemoveButton onClick={() => setCertifications(prev => prev.filter((_, j) => j !== i))} />}
-                <div className="grid grid-cols-1 gap-3">
-                  <div>
-                    <label className={labelClass}>Institution</label>
-                    <input type="text" className={inputClass} placeholder="AWS" value={cert.institution} onChange={e => updateCert(i, 'institution', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Certification</label>
-                    <input type="text" className={inputClass} placeholder="Solutions Architect" value={cert.certification} onChange={e => updateCert(i, 'certification', e.target.value)} />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Date</label>
-                    <input type="text" className={inputClass} placeholder="Mar 2024" value={cert.date} onChange={e => updateCert(i, 'date', e.target.value)} />
-                  </div>
+      <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
+        <SectionHeading action={<AddButton onClick={() => setCertifications(prev => [...prev, { ...emptyCert }])}>+ Add</AddButton>}>Certifications</SectionHeading>
+        <div className="space-y-4">
+          {certifications.map((cert, i) => (
+            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+              {certifications.length > 1 && <RemoveButton onClick={() => setCertifications(prev => prev.filter((_, j) => j !== i))} />}
+              <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr] gap-3">
+                <div>
+                  <label className={labelClass}>Institution</label>
+                  <input type="text" className={inputClass} placeholder="AWS" value={cert.institution} onChange={e => updateCert(i, 'institution', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Certification</label>
+                  <input type="text" className={inputClass} placeholder="Solutions Architect" value={cert.certification} onChange={e => updateCert(i, 'certification', e.target.value)} />
+                </div>
+                <div>
+                  <label className={labelClass}>Date</label>
+                  <input type="text" className={inputClass} placeholder="Mar 2024" value={cert.date} onChange={e => updateCert(i, 'date', e.target.value)} />
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-      </div>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }
