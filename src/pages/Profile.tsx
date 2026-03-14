@@ -30,11 +30,14 @@ const inputClass =
 
 const labelClass = 'block text-xs font-medium text-[var(--text)] mb-1'
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
+function SectionHeading({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) {
   return (
-    <h2 className="text-lg font-semibold text-[var(--text-h)] border-b border-[var(--border)] pb-2 mb-4">
-      {children}
-    </h2>
+    <div className="flex items-center justify-between border-b border-[var(--border)] pb-2 mb-4">
+      <h2 className="text-lg font-semibold text-[var(--text-h)]">
+        {children}
+      </h2>
+      {action}
+    </div>
   )
 }
 
@@ -56,7 +59,7 @@ function AddButton({ onClick, children }: { onClick: () => void; children: React
     <button
       type="button"
       onClick={onClick}
-      className="w-full py-2.5 rounded-[var(--radius)] border border-dashed border-[var(--accent-border)] text-[var(--accent)] text-sm font-medium hover:bg-[var(--accent-bg)] transition-colors cursor-pointer"
+      className="px-3 py-1 rounded-[var(--radius)] border border-dashed border-[var(--accent-border)] text-[var(--accent)] text-xs font-medium hover:bg-[var(--accent-bg)] transition-colors cursor-pointer"
     >
       {children}
     </button>
@@ -93,53 +96,55 @@ export default function Profile() {
     <div className="px-8 py-8 space-y-8">
       <h1 className="text-3xl font-extrabold text-[var(--text-h)] tracking-tight">Profile</h1>
 
-      <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading>Personal Information</SectionHeading>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label className={labelClass}>Full Name</label>
-            <input type="text" className={inputClass} placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} />
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8">
+        <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
+          <SectionHeading>Personal Information</SectionHeading>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Full Name</label>
+              <input type="text" className={inputClass} placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelClass}>Email Address</label>
+              <input type="text" className={inputClass} placeholder="john@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelClass}>Phone Number</label>
+              <input type="text" className={inputClass} placeholder="+1 (555) 123-4567" value={phone} onChange={e => setPhone(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelClass}>Location</label>
+              <input type="text" className={inputClass} placeholder="New York, NY" value={location} onChange={e => setLocation(e.target.value)} />
+            </div>
           </div>
-          <div>
-            <label className={labelClass}>Email Address</label>
-            <input type="text" className={inputClass} placeholder="john@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+        </section>
+
+        <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
+          <SectionHeading>Online Presence</SectionHeading>
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className={labelClass}>LinkedIn</label>
+              <input type="text" className={inputClass} placeholder="linkedin.com/in/johndoe" value={linkedIn} onChange={e => setLinkedIn(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelClass}>GitHub</label>
+              <input type="text" className={inputClass} placeholder="github.com/johndoe" value={gitHub} onChange={e => setGitHub(e.target.value)} />
+            </div>
+            <div>
+              <label className={labelClass}>Website</label>
+              <input type="text" className={inputClass} placeholder="johndoe.dev" value={website} onChange={e => setWebsite(e.target.value)} />
+            </div>
           </div>
-          <div>
-            <label className={labelClass}>Phone Number</label>
-            <input type="text" className={inputClass} placeholder="+1 (555) 123-4567" value={phone} onChange={e => setPhone(e.target.value)} />
-          </div>
-          <div>
-            <label className={labelClass}>Location</label>
-            <input type="text" className={inputClass} placeholder="New York, NY" value={location} onChange={e => setLocation(e.target.value)} />
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading>Online Presence</SectionHeading>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className={labelClass}>LinkedIn</label>
-            <input type="text" className={inputClass} placeholder="linkedin.com/in/johndoe" value={linkedIn} onChange={e => setLinkedIn(e.target.value)} />
-          </div>
-          <div>
-            <label className={labelClass}>GitHub</label>
-            <input type="text" className={inputClass} placeholder="github.com/johndoe" value={gitHub} onChange={e => setGitHub(e.target.value)} />
-          </div>
-          <div>
-            <label className={labelClass}>Website</label>
-            <input type="text" className={inputClass} placeholder="johndoe.dev" value={website} onChange={e => setWebsite(e.target.value)} />
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading>Work Experience</SectionHeading>
+        <SectionHeading action={<AddButton onClick={() => setWorkExperiences(prev => [...prev, { ...emptyWork }])}>+ Add</AddButton>}>Work Experience</SectionHeading>
         <div className="space-y-4">
           {workExperiences.map((work, i) => (
-            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4 space-y-3">
+            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
               {workExperiences.length > 1 && <RemoveButton onClick={() => setWorkExperiences(prev => prev.filter((_, j) => j !== i))} />}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[3fr_3fr_2fr_2fr_1fr] gap-3">
                 <div>
                   <label className={labelClass}>Company Name</label>
                   <input type="text" className={inputClass} placeholder="Acme Corp" value={work.company} onChange={e => updateWork(i, 'company', e.target.value)} />
@@ -156,78 +161,71 @@ export default function Profile() {
                   <label className={labelClass}>Location</label>
                   <input type="text" className={inputClass} placeholder="San Francisco, CA" value={work.location} onChange={e => updateWork(i, 'location', e.target.value)} />
                 </div>
-              </div>
-              <div>
-                <label className={labelClass}>Number of Bullet Points</label>
-                <input type="text" className={inputClass} placeholder="3" value={work.bulletPoints} onChange={e => updateWork(i, 'bulletPoints', e.target.value)} />
+                <div>
+                  <label className={labelClass}>Bullet Points</label>
+                  <input type="text" className={inputClass} placeholder="3" value={work.bulletPoints} onChange={e => updateWork(i, 'bulletPoints', e.target.value)} />
+                </div>
               </div>
             </div>
           ))}
-          <AddButton onClick={() => setWorkExperiences(prev => [...prev, { ...emptyWork }])}>
-            + Add Work Experience
-          </AddButton>
         </div>
       </section>
 
-      <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading>Education</SectionHeading>
-        <div className="space-y-4">
-          {educations.map((edu, i) => (
-            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
-              {educations.length > 1 && <RemoveButton onClick={() => setEducations(prev => prev.filter((_, j) => j !== i))} />}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div>
-                  <label className={labelClass}>Institution</label>
-                  <input type="text" className={inputClass} placeholder="MIT" value={edu.institution} onChange={e => updateEdu(i, 'institution', e.target.value)} />
-                </div>
-                <div>
-                  <label className={labelClass}>Degree and Major</label>
-                  <input type="text" className={inputClass} placeholder="B.S. Computer Science" value={edu.degreeMajor} onChange={e => updateEdu(i, 'degreeMajor', e.target.value)} />
-                </div>
-                <div>
-                  <label className={labelClass}>Period</label>
-                  <input type="text" className={inputClass} placeholder="Sep 2018 – May 2022" value={edu.period} onChange={e => updateEdu(i, 'period', e.target.value)} />
-                </div>
-                <div>
-                  <label className={labelClass}>Location</label>
-                  <input type="text" className={inputClass} placeholder="Cambridge, MA" value={edu.location} onChange={e => updateEdu(i, 'location', e.target.value)} />
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 items-start">
+        <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
+          <SectionHeading action={<AddButton onClick={() => setEducations(prev => [...prev, { ...emptyEdu }])}>+ Add</AddButton>}>Education</SectionHeading>
+          <div className="space-y-4">
+            {educations.map((edu, i) => (
+              <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+                {educations.length > 1 && <RemoveButton onClick={() => setEducations(prev => prev.filter((_, j) => j !== i))} />}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Institution</label>
+                    <input type="text" className={inputClass} placeholder="MIT" value={edu.institution} onChange={e => updateEdu(i, 'institution', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Degree and Major</label>
+                    <input type="text" className={inputClass} placeholder="B.S. Computer Science" value={edu.degreeMajor} onChange={e => updateEdu(i, 'degreeMajor', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Period</label>
+                    <input type="text" className={inputClass} placeholder="Sep 2018 – May 2022" value={edu.period} onChange={e => updateEdu(i, 'period', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Location</label>
+                    <input type="text" className={inputClass} placeholder="Cambridge, MA" value={edu.location} onChange={e => updateEdu(i, 'location', e.target.value)} />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          <AddButton onClick={() => setEducations(prev => [...prev, { ...emptyEdu }])}>
-            + Add Education
-          </AddButton>
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading>Certifications</SectionHeading>
-        <div className="space-y-4">
-          {certifications.map((cert, i) => (
-            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
-              {certifications.length > 1 && <RemoveButton onClick={() => setCertifications(prev => prev.filter((_, j) => j !== i))} />}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className={labelClass}>Institution</label>
-                  <input type="text" className={inputClass} placeholder="AWS" value={cert.institution} onChange={e => updateCert(i, 'institution', e.target.value)} />
-                </div>
-                <div>
-                  <label className={labelClass}>Certification</label>
-                  <input type="text" className={inputClass} placeholder="Solutions Architect" value={cert.certification} onChange={e => updateCert(i, 'certification', e.target.value)} />
-                </div>
-                <div>
-                  <label className={labelClass}>Date</label>
-                  <input type="text" className={inputClass} placeholder="Mar 2024" value={cert.date} onChange={e => updateCert(i, 'date', e.target.value)} />
+        <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
+          <SectionHeading action={<AddButton onClick={() => setCertifications(prev => [...prev, { ...emptyCert }])}>+ Add</AddButton>}>Certifications</SectionHeading>
+          <div className="space-y-4">
+            {certifications.map((cert, i) => (
+              <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+                {certifications.length > 1 && <RemoveButton onClick={() => setCertifications(prev => prev.filter((_, j) => j !== i))} />}
+                <div className="grid grid-cols-1 gap-3">
+                  <div>
+                    <label className={labelClass}>Institution</label>
+                    <input type="text" className={inputClass} placeholder="AWS" value={cert.institution} onChange={e => updateCert(i, 'institution', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Certification</label>
+                    <input type="text" className={inputClass} placeholder="Solutions Architect" value={cert.certification} onChange={e => updateCert(i, 'certification', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Date</label>
+                    <input type="text" className={inputClass} placeholder="Mar 2024" value={cert.date} onChange={e => updateCert(i, 'date', e.target.value)} />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          <AddButton onClick={() => setCertifications(prev => [...prev, { ...emptyCert }])}>
-            + Add Certification
-          </AddButton>
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      </div>
     </div>
   )
 }
