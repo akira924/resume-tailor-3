@@ -29,6 +29,7 @@ interface ProfileData {
   gitHub: string
   website: string
   roleBasedJobTitle: boolean
+  seniority: string
   workExperiences: WorkExperience[]
   educations: Education[]
   certifications: Certification[]
@@ -47,6 +48,7 @@ const DEFAULT_PROFILE: ProfileData = {
   gitHub: '',
   website: '',
   roleBasedJobTitle: false,
+  seniority: '',
   workExperiences: [{ ...emptyWork }],
   educations: [{ ...emptyEdu }],
   certifications: [{ ...emptyCert }],
@@ -96,7 +98,7 @@ function AddButton({ onClick, children }: { onClick: () => void; children: React
 export default function Profile() {
   const [profile, setProfile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
 
-  const { fullName, email, phone, location, linkedIn, gitHub, website, roleBasedJobTitle, workExperiences, educations, certifications } = profile
+  const { fullName, email, phone, location, linkedIn, gitHub, website, roleBasedJobTitle, seniority, workExperiences, educations, certifications } = profile
 
   const set = <K extends keyof ProfileData>(key: K, val: ProfileData[K]) =>
     setProfile(prev => ({ ...prev, [key]: val }))
@@ -179,6 +181,16 @@ export default function Profile() {
             <AddButton onClick={() => set('workExperiences', [...workExperiences, { ...emptyWork }])}>+ Add</AddButton>
           </div>
         }>Work Experience</SectionHeading>
+        <div className="mb-4">
+          <label className={labelClass}>{roleBasedJobTitle ? 'Seniority Level' : 'Job Title'}</label>
+          <input
+            type="text"
+            className={inputClass}
+            placeholder={roleBasedJobTitle ? 'Senior level with over 11 years of experience' : 'Senior Software Engineer'}
+            value={seniority}
+            onChange={e => set('seniority', e.target.value)}
+          />
+        </div>
         <div className="space-y-4">
           {workExperiences.map((work, i) => (
             <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
