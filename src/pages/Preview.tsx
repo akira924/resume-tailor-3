@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { type ProfileData, DEFAULT_PROFILE } from '../types/profile'
 
@@ -115,13 +115,120 @@ const SAMPLE = {
     { institution: 'Massachusetts Institute of Technology', degree: 'B.S. Computer Science', period: '2014 – 2018' },
   ],
   skills: [
-    'JavaScript', 'TypeScript', 'React', 'Node.js', 'Python',
-    'AWS', 'Docker', 'Kubernetes', 'PostgreSQL', 'GraphQL', 'Redis', 'Go',
+    { category: 'Languages', skills: ['JavaScript', 'TypeScript', 'Python', 'Go'] },
+    { category: 'Frameworks & Libraries', skills: ['React', 'Node.js', 'GraphQL'] },
+    { category: 'Cloud & DevOps', skills: ['AWS', 'Docker', 'Kubernetes'] },
+    { category: 'Databases', skills: ['PostgreSQL', 'Redis'] },
   ],
 }
 
 const PAGE_W = 816
 const PAGE_H = 1056
+
+// ── Resume Data Types & Helpers ─────────────────────
+
+interface ExperienceItem {
+  company: string
+  role: string
+  period: string
+  location: string
+  bullets: string[]
+}
+
+interface EducationItem {
+  institution: string
+  degree: string
+  period: string
+}
+
+interface CertificationItem {
+  institution: string
+  certification: string
+  date: string
+}
+
+interface SkillCategory {
+  category: string
+  skills: string[]
+}
+
+interface ResumeData {
+  name: string
+  jobTitle: string
+  email: string
+  phone: string
+  location: string
+  linkedIn: string
+  gitHub: string
+  website: string
+  summary: string
+  experience: ExperienceItem[]
+  education: EducationItem[]
+  certifications: CertificationItem[]
+  skills: SkillCategory[]
+}
+
+const SAMPLE_DATA: ResumeData = { ...SAMPLE, certifications: [] }
+
+function extractJsonString(raw: string): string {
+  const match = raw.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
+  return match ? match[1].trim() : raw.trim()
+}
+
+function buildResumeData(profile: ProfileData, jsonStr: string): ResumeData | null {
+  if (!jsonStr.trim()) return null
+
+  try {
+    const cleaned = extractJsonString(jsonStr)
+    const parsed = JSON.parse(cleaned)
+    const isRoleBased = profile.roleBasedJobTitle
+
+    const skills: SkillCategory[] = Array.isArray(parsed.skills)
+      ? parsed.skills.flatMap((cat: Record<string, string[]>) =>
+          Object.entries(cat).map(([category, items]) => ({ category, skills: items }))
+        )
+      : []
+
+    const experience: ExperienceItem[] = Array.isArray(parsed.experience)
+      ? parsed.experience.map((exp: { title?: string; sentences?: string[] }, i: number) => {
+          const profileExp = profile.workExperiences[i]
+          return {
+            company: profileExp?.company || '',
+            role: isRoleBased ? (profileExp?.jobTitle || '') : (exp.title || ''),
+            period: profileExp?.period || '',
+            location: profileExp?.location || '',
+            bullets: Array.isArray(exp.sentences) ? exp.sentences : [],
+          }
+        })
+      : []
+
+    const education: EducationItem[] = profile.educations
+      .filter(e => e.institution || e.degreeMajor)
+      .map(e => ({ institution: e.institution, degree: e.degreeMajor, period: e.period }))
+
+    const certifications: CertificationItem[] = profile.certifications
+      .filter(c => c.certification || c.institution)
+      .map(c => ({ institution: c.institution, certification: c.certification, date: c.date }))
+
+    return {
+      name: profile.fullName,
+      jobTitle: isRoleBased ? profile.seniority : (parsed.title || ''),
+      email: profile.email,
+      phone: profile.phone,
+      location: profile.location,
+      linkedIn: profile.linkedIn,
+      gitHub: profile.gitHub,
+      website: profile.website,
+      summary: parsed.summary || '',
+      experience,
+      education,
+      certifications,
+      skills,
+    }
+  } catch {
+    return null
+  }
+}
 
 // ── Utility Components ───────────────────────────────
 
@@ -479,7 +586,7 @@ function ZoomControls({ zoom, onZoomChange }: { zoom: number; onZoomChange: (z: 
   )
 }
 
-function ResumeHeader({ settings }: { settings: ResumeSettings }) {
+function ResumeHeader({ settings, data }: { settings: ResumeSettings; data: ResumeData }) {
   const { header } = settings
   const nameStyle: React.CSSProperties = {
     fontSize: `${header.name.fontSize}pt`,
@@ -503,14 +610,14 @@ function ResumeHeader({ settings }: { settings: ResumeSettings }) {
   const linkStyle: React.CSSProperties = { color: header.contactFontColor, textDecoration: 'underline' }
 
   const onlinePresence: { label: string; url: string }[] = [
-    ...(SAMPLE.linkedIn ? [{ label: 'LinkedIn', url: `https://${SAMPLE.linkedIn}` }] : []),
-    ...(SAMPLE.gitHub ? [{ label: 'GitHub', url: `https://${SAMPLE.gitHub}` }] : []),
-    ...(SAMPLE.website ? [{ label: 'Website', url: `https://${SAMPLE.website}` }] : []),
+    ...(data.linkedIn ? [{ label: 'LinkedIn', url: `https://${data.linkedIn}` }] : []),
+    ...(data.gitHub ? [{ label: 'GitHub', url: `https://${data.gitHub}` }] : []),
+    ...(data.website ? [{ label: 'Website', url: `https://${data.website}` }] : []),
   ]
 
   const contactInlineItems: React.ReactNode[] = [
-    <span key="email">{SAMPLE.email}</span>,
-    <span key="phone">{SAMPLE.phone}</span>,
+    ...(data.email ? [<span key="email">{data.email}</span>] : []),
+    ...(data.phone ? [<span key="phone">{data.phone}</span>] : []),
     ...(useEmbeddedLinks
       ? onlinePresence.map((op) => (
           <a key={op.label} href={op.url} style={linkStyle} target="_blank" rel="noreferrer">{op.label}</a>
@@ -519,7 +626,7 @@ function ResumeHeader({ settings }: { settings: ResumeSettings }) {
           <span key={op.label}>{op.url.replace('https://', '')}</span>
         ))
     ),
-    <span key="location">{SAMPLE.location}</span>,
+    ...(data.location ? [<span key="location">{data.location}</span>] : []),
   ]
 
   const contactInline = (
@@ -534,23 +641,23 @@ function ResumeHeader({ settings }: { settings: ResumeSettings }) {
   )
 
   const hybridContactItems: React.ReactNode[] = [
-    <div key="email">{SAMPLE.email}</div>,
-    <div key="phone">{SAMPLE.phone}</div>,
+    ...(data.email ? [<div key="email">{data.email}</div>] : []),
+    ...(data.phone ? [<div key="phone">{data.phone}</div>] : []),
     ...onlinePresence.map((op) => (
       <div key={op.label}>{op.url.replace('https://', '')}</div>
     )),
-    <div key="location">{SAMPLE.location}</div>,
+    ...(data.location ? [<div key="location">{data.location}</div>] : []),
   ]
 
   const nameAndTitle = header.jobTitlePosition === 'beside' ? (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, justifyContent: header.alignment === 'center' ? 'center' : undefined }}>
-      <span style={nameStyle}>{SAMPLE.name}</span>
-      <span style={titleStyle}>{SAMPLE.jobTitle}</span>
+      <span style={nameStyle}>{data.name}</span>
+      <span style={titleStyle}>{data.jobTitle}</span>
     </div>
   ) : (
     <div>
-      <div style={nameStyle}>{SAMPLE.name}</div>
-      <div style={{ ...titleStyle, marginTop: 2 }}>{SAMPLE.jobTitle}</div>
+      <div style={nameStyle}>{data.name}</div>
+      <div style={{ ...titleStyle, marginTop: 2 }}>{data.jobTitle}</div>
     </div>
   )
 
@@ -607,7 +714,7 @@ function ResumeSectionTitle({ settings, children }: { settings: ResumeSettings; 
 
 function ExperienceEntry({ settings, entry }: {
   settings: ResumeSettings
-  entry: typeof SAMPLE.experience[0]
+  entry: ExperienceItem
 }) {
   const baseFontSize = `${settings.primary.fontSize}pt`
   const labelSize = `${settings.primary.fontSize + 1}pt`
@@ -623,7 +730,7 @@ function ExperienceEntry({ settings, entry }: {
               <span style={{ fontWeight: 400 }}>–</span>
               <span style={{ fontWeight: 500 }}>{entry.role}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, textAlign: 'right' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, textAlign: 'right', fontSize: baseFontSize }}>
               <span>{entry.period}</span>
               <span style={{ fontWeight: 400 }}>|</span>
               <span>{entry.location}</span>
@@ -635,11 +742,11 @@ function ExperienceEntry({ settings, entry }: {
           <div style={{ fontSize: labelSize, color }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontWeight: 600 }}>{entry.company}</span>
-              <span>{entry.location}</span>
+              <span style={{ fontSize: baseFontSize }}>{entry.location}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontStyle: 'italic' }}>{entry.role}</span>
-              <span>{entry.period}</span>
+              <span style={{ fontSize: baseFontSize }}>{entry.period}</span>
             </div>
           </div>
         )
@@ -648,11 +755,11 @@ function ExperienceEntry({ settings, entry }: {
           <div style={{ fontSize: labelSize, color }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontWeight: 600 }}>{entry.role}</span>
-              <span>{entry.period}</span>
+              <span style={{ fontSize: baseFontSize }}>{entry.period}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ fontStyle: 'italic' }}>{entry.company}</span>
-              <span>{entry.location}</span>
+              <span style={{ fontSize: baseFontSize }}>{entry.location}</span>
             </div>
           </div>
         )
@@ -671,55 +778,130 @@ function ExperienceEntry({ settings, entry }: {
   )
 }
 
-function ResumePreview({ settings, zoom }: { settings: ResumeSettings; zoom: number }) {
+function ResumePreview({ settings, zoom, data }: { settings: ResumeSettings; zoom: number; data: ResumeData }) {
   const scale = zoom / 100
   const margin = settings.primary.pageMargin * 96
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [pageCount, setPageCount] = useState(1)
+
+  useEffect(() => {
+    if (contentRef.current) {
+      const pages = Math.max(1, Math.ceil(contentRef.current.scrollHeight / PAGE_H))
+      if (pages !== pageCount) setPageCount(pages)
+    }
+  })
+
+  const gap = 32
+  const totalHeight = pageCount * PAGE_H + (pageCount - 1) * gap
+
+  const contentStyle: React.CSSProperties = {
+    width: PAGE_W,
+    padding: margin,
+    fontFamily: `"${settings.primary.fontFamily}", sans-serif`,
+    fontSize: `${settings.primary.fontSize}pt`,
+    color: settings.primary.fontColor,
+    boxSizing: 'border-box',
+  }
+
+  const resumeContent = (
+    <>
+      <ResumeHeader settings={settings} data={data} />
+
+      {data.summary && (
+        <>
+          <ResumeSectionTitle settings={settings}>Professional Summary</ResumeSectionTitle>
+          <p style={{ margin: 0, lineHeight: 1.55, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
+            {data.summary}
+          </p>
+        </>
+      )}
+
+      {data.skills.length > 0 && (
+        <>
+          <ResumeSectionTitle settings={settings}>Technical Skills</ResumeSectionTitle>
+          <div style={{ margin: 0, lineHeight: 1.6, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
+            {data.skills.map((cat, i) => (
+              <div key={i} style={{ marginBottom: i < data.skills.length - 1 ? 2 : 0 }}>
+                <span style={{ fontWeight: 600 }}>{cat.category}:</span>{' '}
+                {cat.skills.join(', ')}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {data.experience.length > 0 && (
+        <>
+          <ResumeSectionTitle settings={settings}>Experience</ResumeSectionTitle>
+          {data.experience.map((exp, i) => (
+            <ExperienceEntry key={i} settings={settings} entry={exp} />
+          ))}
+        </>
+      )}
+
+      {data.education.length > 0 && (
+        <>
+          <ResumeSectionTitle settings={settings}>Education</ResumeSectionTitle>
+          {data.education.map((edu, i) => (
+            <div key={i} style={{ fontSize: `${settings.primary.fontSize + 1}pt`, color: settings.primary.fontColor }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontWeight: 600 }}>{edu.institution}</span>
+                <span style={{ fontSize: `${settings.primary.fontSize}pt` }}>{edu.period}</span>
+              </div>
+              <div style={{ fontStyle: 'italic', fontSize: `${settings.primary.fontSize}pt` }}>{edu.degree}</div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {data.certifications.length > 0 && (
+        <>
+          <ResumeSectionTitle settings={settings}>Certifications</ResumeSectionTitle>
+          {data.certifications.map((cert, i) => (
+            <div key={i} style={{ fontSize: `${settings.primary.fontSize + 1}pt`, color: settings.primary.fontColor }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontWeight: 600 }}>{cert.certification}</span>
+                <span style={{ fontSize: `${settings.primary.fontSize}pt` }}>{cert.date}</span>
+              </div>
+              {cert.institution && <div style={{ fontStyle: 'italic', fontSize: `${settings.primary.fontSize}pt` }}>{cert.institution}</div>}
+            </div>
+          ))}
+        </>
+      )}
+    </>
+  )
 
   return (
-    <div style={{ width: PAGE_W * scale, height: PAGE_H * scale, flexShrink: 0 }}>
-      <div
-        style={{
-          width: PAGE_W,
-          height: PAGE_H,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          background: '#fff',
-          boxShadow: '0 2px 24px rgba(0,0,0,0.12)',
-          padding: margin,
-          fontFamily: `"${settings.primary.fontFamily}", sans-serif`,
-          fontSize: `${settings.primary.fontSize}pt`,
-          color: settings.primary.fontColor,
-          overflow: 'hidden',
-          boxSizing: 'border-box',
-        }}
-      >
-        <ResumeHeader settings={settings} />
+    <div style={{ width: PAGE_W * scale, height: totalHeight * scale, flexShrink: 0 }}>
+      <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: PAGE_W, position: 'relative' }}>
+        {/* Hidden container for height measurement */}
+        <div
+          ref={contentRef}
+          aria-hidden
+          style={{ ...contentStyle, position: 'absolute', visibility: 'hidden', pointerEvents: 'none' }}
+        >
+          {resumeContent}
+        </div>
 
-        <ResumeSectionTitle settings={settings}>Professional Summary</ResumeSectionTitle>
-        <p style={{ margin: 0, lineHeight: 1.55, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
-          {SAMPLE.summary}
-        </p>
-
-        <ResumeSectionTitle settings={settings}>Experience</ResumeSectionTitle>
-        {SAMPLE.experience.map((exp, i) => (
-          <ExperienceEntry key={i} settings={settings} entry={exp} />
-        ))}
-
-        <ResumeSectionTitle settings={settings}>Education</ResumeSectionTitle>
-        {SAMPLE.education.map((edu, i) => (
-          <div key={i} style={{ fontSize: `${settings.primary.fontSize + 1}pt`, color: settings.primary.fontColor }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <span style={{ fontWeight: 600 }}>{edu.institution}</span>
-              <span>{edu.period}</span>
+        {/* Visible pages */}
+        {Array.from({ length: pageCount }, (_, i) => (
+          <div
+            key={i}
+            style={{
+              width: PAGE_W,
+              height: PAGE_H,
+              overflow: 'hidden',
+              background: '#fff',
+              boxShadow: '0 2px 24px rgba(0,0,0,0.12)',
+              position: 'relative',
+              marginBottom: i < pageCount - 1 ? gap : 0,
+            }}
+          >
+            <div style={{ ...contentStyle, position: 'absolute', top: -(i * PAGE_H) }}>
+              {resumeContent}
             </div>
-            <div style={{ fontStyle: 'italic' }}>{edu.degree}</div>
           </div>
         ))}
-
-        <ResumeSectionTitle settings={settings}>Skills</ResumeSectionTitle>
-        <p style={{ margin: 0, lineHeight: 1.55, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
-          {SAMPLE.skills.join('  •  ')}
-        </p>
       </div>
     </div>
   )
@@ -1044,7 +1226,7 @@ function RightSidebar({ jsonInput, onJsonChange, aiPrompt }: {
             <textarea
               value={jsonInput}
               onChange={(e) => onJsonChange(e.target.value)}
-              placeholder={'{\n  "name": "John Doe",\n  "jobTitle": "Software Engineer",\n  ...\n}'}
+              placeholder={'{\n  "title": "Software Engineer",\n  "summary": "...",\n  "skills": [{ "Category": ["Skill1"] }],\n  "experience": [{ "title": "...", "sentences": ["..."] }]\n}'}
               className="w-full h-64 mt-3 px-3 py-2.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text-h)] text-xs leading-relaxed resize-none focus:outline-none focus:border-[var(--accent-border)] transition-colors font-mono"
             />
           </div>
@@ -1066,6 +1248,10 @@ export default function Preview() {
     if (profile.roleBasedJobTitle) return buildRoleBasedAiPrompt(profile)
     return buildAiPrompt(profile)
   }, [profile])
+
+  const resumeData = useMemo<ResumeData>(() => {
+    return buildResumeData(profile, jsonInput) || SAMPLE_DATA
+  }, [profile, jsonInput])
 
   useEffect(() => {
     if (GOOGLE_FONTS.includes(settings.primary.fontFamily)) {
@@ -1102,7 +1288,7 @@ export default function Preview() {
           <ZoomControls zoom={zoom} onZoomChange={setZoom} />
         </div>
         <div className="pb-8">
-          <ResumePreview settings={settings} zoom={zoom} />
+          <ResumePreview settings={settings} zoom={zoom} data={resumeData} />
         </div>
       </div>
 
