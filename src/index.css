@@ -69,3 +69,46 @@ body {
   background: var(--accent);
   color: #fff;
 }
+
+@media print {
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
+  html, body, #root {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  header, footer, [data-no-print] {
+    display: none !important;
+  }
+
+  main {
+    overflow: visible !important;
+    flex: none !important;
+    min-height: auto !important;
+  }
+
+  main > div {
+    display: block !important;
+  }
+
+  main > div > div {
+    overflow: visible !important;
+    background: none !important;
+    display: block !important;
+    flex: none !important;
+  }
+
+  [data-resume-page] {
+    box-shadow: none !important;
+    margin: 0 !important;
+    break-after: page;
+  }
+
+  [data-resume-page]:last-child {
+    break-after: auto;
+  }
+}

@@ -874,10 +874,10 @@ function ResumePreview({ settings, zoom, data }: { settings: ResumeSettings; zoo
   return (
     <div style={{ width: PAGE_W * scale, height: totalHeight * scale, flexShrink: 0 }}>
       <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: PAGE_W, position: 'relative' }}>
-        {/* Hidden container for height measurement */}
         <div
           ref={contentRef}
           aria-hidden
+          data-no-print
           style={{ ...contentStyle, position: 'absolute', visibility: 'hidden', pointerEvents: 'none' }}
         >
           {resumeContent}
@@ -887,6 +887,7 @@ function ResumePreview({ settings, zoom, data }: { settings: ResumeSettings; zoo
         {Array.from({ length: pageCount }, (_, i) => (
           <div
             key={i}
+            data-resume-page
             style={{
               width: PAGE_W,
               height: PAGE_H,
@@ -1195,7 +1196,7 @@ function RightSidebar({ jsonInput, onJsonChange, aiPrompt }: {
   }
 
   return (
-    <div className="w-96 shrink-0 border-l border-[var(--border)] overflow-y-auto">
+    <div className="w-96 shrink-0 border-l border-[var(--border)] overflow-y-auto" data-no-print>
       <div className="p-5 space-y-4">
         <h1 className="text-xl font-bold text-[var(--text-h)] tracking-tight">AI Assistant</h1>
 
@@ -1270,7 +1271,7 @@ export default function Preview() {
 
   return (
     <div className="flex h-full min-h-0">
-      <div className="w-96 shrink-0 border-r border-[var(--border)] overflow-y-auto">
+      <div className="w-96 shrink-0 border-r border-[var(--border)] overflow-y-auto" data-no-print>
         <div className="p-5 space-y-4">
           <h1 className="text-xl font-bold text-[var(--text-h)] tracking-tight">Customize Resume</h1>
           <PrimarySection value={settings.primary} onChange={(v) => setSettings((s) => ({ ...s, primary: v }))} />
@@ -1284,8 +1285,22 @@ export default function Preview() {
         className="flex-1 min-w-0 overflow-auto flex flex-col items-center"
         style={{ backgroundColor: 'var(--border)' }}
       >
-        <div className="sticky top-0 z-10 w-full flex justify-center py-3 backdrop-blur-sm" style={{ backgroundColor: 'color-mix(in srgb, var(--border) 80%, transparent)' }}>
-          <ZoomControls zoom={zoom} onZoomChange={setZoom} />
+        <div className="sticky top-0 z-10 w-full flex justify-center py-3 backdrop-blur-sm" data-no-print style={{ backgroundColor: 'color-mix(in srgb, var(--border) 80%, transparent)' }}>
+          <div className="flex items-center gap-3">
+            <ZoomControls zoom={zoom} onZoomChange={setZoom} />
+            <div className="w-px h-5 bg-[var(--border)]" />
+            <button
+              onClick={() => window.print()}
+              className="w-7 h-7 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] cursor-pointer hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors flex items-center justify-center"
+              title="Download PDF"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div className="pb-8">
           <ResumePreview settings={settings} zoom={zoom} data={resumeData} />
