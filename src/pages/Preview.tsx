@@ -876,20 +876,118 @@ JOB DESCRIPTION
 `
 }
 
-const ROLE_BASED_PROMPT = `You are a professional resume writer. Based on the following job description, tailor my resume to highlight the most relevant skills and experiences. Rewrite bullet points to use strong action verbs and quantify achievements where possible. Ensure the resume is ATS-friendly and optimized for the target role.
+function buildRoleBasedAiPrompt(profile: ProfileData): string {
+  const workLines = profile.workExperiences
+    .filter(w => w.company)
+    .map(w => `- ${w.company}, ${w.jobTitle || 'N/A'}, ${w.period || 'N/A'}, ${w.bulletPoints || '0'} Bullet Points`)
+    .join('\n')
 
-Job Description:
-[Paste the job description here]
+  const eduLines = profile.educations
+    .filter(e => e.degreeMajor)
+    .map(e => `- ${e.degreeMajor}`)
+    .join('\n')
 
-My Current Resume:
-[Your resume content will be inserted here]
+  const sentenceCountRules = profile.workExperiences
+    .filter(w => w.company && w.bulletPoints)
+    .map(w => `- ${w.company}: at least ${w.bulletPoints} sentences`)
+    .join('\n')
 
-Instructions:
-1. Match keywords from the job description
-2. Reorder skills by relevance to the role
-3. Rewrite experience bullets to align with job requirements
-4. Keep the tone professional and concise
-5. Return the result as a JSON object matching the resume schema`
+  const candidateLocation = profile.location || 'Austin, TX'
+
+  return `You are a resume generation engine.
+Your output MUST be exactly ONE valid JSON object inside a single code block.
+Do NOT include explanations, comments, markdown, headers, or text outside the JSON.
+Do NOT generate multiple code blocks.
+Do NOT ask questions.
+If any rule fails, STOP and return a plain text error message instead of JSON.
+
+========================================
+CANDIDATE PROFILE
+========================================
+Job Title: ${profile.seniority || 'Not specified'}
+Work Experience:
+${workLines || '- No work experience provided'}
+Education:
+${eduLines || '- No education provided'}
+
+========================================
+JOB DESCRIPTION HANDLING RULES
+========================================
+1. If the job requires security clearance, on-site only work, DO NOT generate a resume.
+2. If the job requires a specific location and it does NOT match ${candidateLocation}, DO NOT generate a resume.
+
+========================================
+OUTPUT FORMAT (STRICT)
+========================================
+Return ONE JSON object with the following structure:
+{
+  "summary": "",
+  "skills": [
+    { "Category1": ["Skill1", "Skill2", "..."] }
+  ],
+  "experience": [
+    {
+      "sentences": [
+        "Sentence 1",
+        "Sentence 2"
+      ]
+    }
+  ]
+}
+
+========================================
+CONTENT RULES
+========================================
+SUMMARY
+- 3–4 sentences
+- Professional, ATS-optimized, concise
+- Aligned directly to the job description
+SKILLS
+- 30–35 total skills
+- Categorized
+- Must include technologies from the job description
+- Only include technologies released before the experience period
+EDUCATION DEGREE RULES:
+Only modify the degree if it is not related to the job description.
+- Each degree should be appropriate for the job description.
+- Each degree should be common in the industry.
+EXPERIENCE – SENTENCE RULES (VERY IMPORTANT)
+- Third-person only without the name, and he or she
+- No bullet symbols
+- Each sentence must be 150–250 characters and contain detailed, technically rich descriptions of your role, specific contributions, and technologies used.
+- Each sentence must end with a period
+- No sentence may be vague or generic
+- Each experience must reference company industry relevance
+SENTENCE COUNT PER COMPANY
+${sentenceCountRules || '- No sentence count rules specified'}
+Each sentence must be placed as a separate string inside the sentences array.
+
+========================================
+FORMATTING RULES
+========================================
+- JSON ONLY
+- ONE code block ONLY
+- No markdown outside JSON
+- No comments
+- No trailing commas
+- Valid JSON syntax
+- ATS-safe language only
+
+========================================
+FINAL VALIDATION
+========================================
+Before responding, verify:
+- All job description technologies are included
+- Sentence length requirements are met
+- Sentence count requirements are met
+- Job titles are aligned to the role
+- Output is valid JSON
+
+========================================
+JOB DESCRIPTION
+========================================
+`
+}
 
 function RightSidebar({ jsonInput, onJsonChange, aiPrompt }: {
   jsonInput: string; onJsonChange: (v: string) => void; aiPrompt: string
@@ -965,7 +1063,7 @@ export default function Preview() {
   const [jsonInput, setJsonInput] = useState('')
 
   const aiPrompt = useMemo(() => {
-    if (profile.roleBasedJobTitle) return ROLE_BASED_PROMPT
+    if (profile.roleBasedJobTitle) return buildRoleBasedAiPrompt(profile)
     return buildAiPrompt(profile)
   }, [profile])
 
