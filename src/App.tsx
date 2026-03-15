@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import Home from './pages/Home'
 import Profile from './pages/Profile'
+import Preview from './pages/Preview'
 import About from './pages/About'
 import Contact from './pages/Contact'
 
-type Page = 'home' | 'profile' | 'about' | 'contact'
+type Page = 'home' | 'profile' | 'preview' | 'about' | 'contact'
 
 const pages: Record<Page, { label: string; component: React.FC }> = {
   home: { label: 'Home', component: Home },
   profile: { label: 'Profile', component: Profile },
+  preview: { label: 'Preview', component: Preview },
   about: { label: 'About', component: About },
   contact: { label: 'Contact', component: Contact },
 }
