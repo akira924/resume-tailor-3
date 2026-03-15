@@ -28,6 +28,7 @@ interface ProfileData {
   linkedIn: string
   gitHub: string
   website: string
+  roleBasedJobTitle: boolean
   workExperiences: WorkExperience[]
   educations: Education[]
   certifications: Certification[]
@@ -45,6 +46,7 @@ const DEFAULT_PROFILE: ProfileData = {
   linkedIn: '',
   gitHub: '',
   website: '',
+  roleBasedJobTitle: false,
   workExperiences: [{ ...emptyWork }],
   educations: [{ ...emptyEdu }],
   certifications: [{ ...emptyCert }],
@@ -94,7 +96,7 @@ function AddButton({ onClick, children }: { onClick: () => void; children: React
 export default function Profile() {
   const [profile, setProfile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
 
-  const { fullName, email, phone, location, linkedIn, gitHub, website, workExperiences, educations, certifications } = profile
+  const { fullName, email, phone, location, linkedIn, gitHub, website, roleBasedJobTitle, workExperiences, educations, certifications } = profile
 
   const set = <K extends keyof ProfileData>(key: K, val: ProfileData[K]) =>
     setProfile(prev => ({ ...prev, [key]: val }))
@@ -158,20 +160,40 @@ export default function Profile() {
       </div>
 
       <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading action={<AddButton onClick={() => set('workExperiences', [...workExperiences, { ...emptyWork }])}>+ Add</AddButton>}>Work Experience</SectionHeading>
+        <SectionHeading action={
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-1.5 cursor-pointer select-none">
+              <span className="text-xs text-[var(--text)]">Role-based</span>
+              <button
+                type="button"
+                onClick={() => set('roleBasedJobTitle', !roleBasedJobTitle)}
+                className="relative w-9 h-5 rounded-full transition-colors cursor-pointer shrink-0"
+                style={{ backgroundColor: roleBasedJobTitle ? 'var(--accent)' : 'var(--border)' }}
+              >
+                <div
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-150"
+                  style={{ left: roleBasedJobTitle ? 18 : 2 }}
+                />
+              </button>
+            </label>
+            <AddButton onClick={() => set('workExperiences', [...workExperiences, { ...emptyWork }])}>+ Add</AddButton>
+          </div>
+        }>Work Experience</SectionHeading>
         <div className="space-y-4">
           {workExperiences.map((work, i) => (
             <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
               {workExperiences.length > 1 && <RemoveButton onClick={() => set('workExperiences', workExperiences.filter((_, j) => j !== i))} />}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[3fr_3fr_2fr_2fr_1fr] gap-3">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${roleBasedJobTitle ? 'lg:grid-cols-[3fr_3fr_2fr_2fr_1fr]' : 'lg:grid-cols-[3fr_2fr_2fr_1fr]'}`}>
                 <div>
                   <label className={labelClass}>Company Name</label>
                   <input type="text" className={inputClass} placeholder="Acme Corp" value={work.company} onChange={e => updateWork(i, 'company', e.target.value)} />
                 </div>
-                <div>
-                  <label className={labelClass}>Job Title</label>
-                  <input type="text" className={inputClass} placeholder="Software Engineer" value={work.jobTitle} onChange={e => updateWork(i, 'jobTitle', e.target.value)} />
-                </div>
+                {roleBasedJobTitle && (
+                  <div>
+                    <label className={labelClass}>Job Title</label>
+                    <input type="text" className={inputClass} placeholder="Software Engineer" value={work.jobTitle} onChange={e => updateWork(i, 'jobTitle', e.target.value)} />
+                  </div>
+                )}
                 <div>
                   <label className={labelClass}>Period</label>
                   <input type="text" className={inputClass} placeholder="Jan 2022 – Present" value={work.period} onChange={e => updateWork(i, 'period', e.target.value)} />
