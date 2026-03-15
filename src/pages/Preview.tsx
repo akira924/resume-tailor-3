@@ -724,11 +724,124 @@ function ResumePreview({ settings, zoom }: { settings: ResumeSettings; zoom: num
   )
 }
 
+// ── Clipboard Button ────────────────────────────────
+
+function ClipboardButton({ type, onClick, copied }: {
+  type: 'copy' | 'paste'; onClick: () => void; copied: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="p-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+      title={copied ? (type === 'copy' ? 'Copied!' : 'Pasted!') : type === 'copy' ? 'Copy to clipboard' : 'Paste from clipboard'}
+    >
+      {copied ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      ) : type === 'copy' ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+        </svg>
+      )}
+    </button>
+  )
+}
+
+// ── Right Sidebar ───────────────────────────────────
+
+const SAMPLE_AI_PROMPT = `You are a professional resume writer. Based on the following job description, tailor my resume to highlight the most relevant skills and experiences. Rewrite bullet points to use strong action verbs and quantify achievements where possible. Ensure the resume is ATS-friendly and optimized for the target role.
+
+Job Description:
+[Paste the job description here]
+
+My Current Resume:
+[Your resume content will be inserted here]
+
+Instructions:
+1. Match keywords from the job description
+2. Reorder skills by relevance to the role
+3. Rewrite experience bullets to align with job requirements
+4. Keep the tone professional and concise
+5. Return the result as a JSON object matching the resume schema`
+
+function RightSidebar({ jsonInput, onJsonChange }: {
+  jsonInput: string; onJsonChange: (v: string) => void
+}) {
+  const [copiedPrompt, setCopiedPrompt] = useState(false)
+  const [pastedJson, setPastedJson] = useState(false)
+
+  const handleCopyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(SAMPLE_AI_PROMPT)
+      setCopiedPrompt(true)
+      setTimeout(() => setCopiedPrompt(false), 2000)
+    } catch { /* clipboard not available */ }
+  }
+
+  const handlePasteJson = async () => {
+    try {
+      const text = await navigator.clipboard.readText()
+      onJsonChange(text)
+      setPastedJson(true)
+      setTimeout(() => setPastedJson(false), 2000)
+    } catch { /* clipboard not available */ }
+  }
+
+  return (
+    <div className="w-96 shrink-0 border-l border-[var(--border)] overflow-y-auto">
+      <div className="p-5 space-y-4">
+        <h1 className="text-xl font-bold text-[var(--text-h)] tracking-tight">AI Assistant</h1>
+
+        <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm font-semibold text-[var(--text-h)]">AI Prompt</span>
+            <div className="mr-1">
+              <ClipboardButton type="copy" onClick={handleCopyPrompt} copied={copiedPrompt} />
+            </div>
+          </div>
+          <div className="px-4 pb-4 border-t border-[var(--border)]">
+            <textarea
+              readOnly
+              value={SAMPLE_AI_PROMPT}
+              className="w-full h-64 mt-3 px-3 py-2.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs leading-relaxed resize-none focus:outline-none font-mono cursor-default"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm font-semibold text-[var(--text-h)]">JSON Response</span>
+            <div className="mr-1">
+              <ClipboardButton type="paste" onClick={handlePasteJson} copied={pastedJson} />
+            </div>
+          </div>
+          <div className="px-4 pb-4 border-t border-[var(--border)]">
+            <textarea
+              value={jsonInput}
+              onChange={(e) => onJsonChange(e.target.value)}
+              placeholder={'{\n  "name": "John Doe",\n  "jobTitle": "Software Engineer",\n  ...\n}'}
+              className="w-full h-64 mt-3 px-3 py-2.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text-h)] text-xs leading-relaxed resize-none focus:outline-none focus:border-[var(--accent-border)] transition-colors font-mono"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Component ───────────────────────────────────
 
 export default function Preview() {
   const [settings, setSettings] = useLocalStorage<ResumeSettings>('resume-tailor:settings', DEFAULT_SETTINGS)
   const [zoom, setZoom] = useState(80)
+  const [jsonInput, setJsonInput] = useState('')
 
   useEffect(() => {
     if (GOOGLE_FONTS.includes(settings.primary.fontFamily)) {
@@ -768,6 +881,8 @@ export default function Preview() {
           <ResumePreview settings={settings} zoom={zoom} />
         </div>
       </div>
+
+      <RightSidebar jsonInput={jsonInput} onJsonChange={setJsonInput} />
     </div>
   )
 }
