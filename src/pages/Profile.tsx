@@ -182,11 +182,11 @@ export default function Profile() {
           </div>
         }>Work Experience</SectionHeading>
         <div className="mb-4">
-          <label className={labelClass}>{roleBasedJobTitle ? 'Seniority Level' : 'Job Title'}</label>
+          <label className={labelClass}>{roleBasedJobTitle ? 'Job Title' : 'Seniority Level'}</label>
           <input
             type="text"
             className={inputClass}
-            placeholder={roleBasedJobTitle ? 'Senior level with over 11 years of experience' : 'Senior Software Engineer'}
+            placeholder={roleBasedJobTitle ? 'Senior Software Engineer' : 'Senior level with over 11 years of experience'}
             value={seniority}
             onChange={e => set('seniority', e.target.value)}
           />
