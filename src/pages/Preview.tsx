@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
+import { type ProfileData, DEFAULT_PROFILE } from '../types/profile'
 
 // ── Types ────────────────────────────────────────────
 
@@ -756,7 +757,126 @@ function ClipboardButton({ type, onClick, copied }: {
 
 // ── Right Sidebar ───────────────────────────────────
 
-const SAMPLE_AI_PROMPT = `You are a professional resume writer. Based on the following job description, tailor my resume to highlight the most relevant skills and experiences. Rewrite bullet points to use strong action verbs and quantify achievements where possible. Ensure the resume is ATS-friendly and optimized for the target role.
+function buildAiPrompt(profile: ProfileData): string {
+  const workLines = profile.workExperiences
+    .filter(w => w.company)
+    .map(w => `- ${w.company}, ${w.period || 'N/A'}, ${w.bulletPoints || '0'} Bullet Points`)
+    .join('\n')
+
+  const eduLines = profile.educations
+    .filter(e => e.degreeMajor)
+    .map(e => `- ${e.degreeMajor}`)
+    .join('\n')
+
+  const sentenceCountRules = profile.workExperiences
+    .filter(w => w.company && w.bulletPoints)
+    .map(w => `- ${w.company}: at least ${w.bulletPoints} sentences`)
+    .join('\n')
+
+  const candidateLocation = profile.location || 'Austin, TX'
+
+  return `You are a resume generation engine.
+Your output MUST be exactly ONE valid JSON object inside a single code block.
+Do NOT include explanations, comments, markdown, headers, or text outside the JSON.
+Do NOT generate multiple code blocks.
+Do NOT ask questions.
+If any rule fails, STOP and return a plain text error message instead of JSON.
+
+========================================
+CANDIDATE PROFILE
+========================================
+Seniority Level: ${profile.seniority || 'Not specified'}
+Work Experience:
+${workLines || '- No work experience provided'}
+Education:
+${eduLines || '- No education provided'}
+
+========================================
+JOB DESCRIPTION HANDLING RULES
+========================================
+1. If the job requires security clearance, on-site only work, DO NOT generate a resume.
+2. If the job requires a specific location and it does NOT match ${candidateLocation}, DO NOT generate a resume.
+
+========================================
+OUTPUT FORMAT (STRICT)
+========================================
+Return ONE JSON object with the following structure:
+{
+  "title": "",
+  "summary": "",
+  "skills": [
+    { "Category1": ["Skill1", "Skill2", "..."] }
+  ],
+  "experience": [
+    {
+      "title": "",
+      "sentences": [
+        "Sentence 1",
+        "Sentence 2"
+      ]
+    }
+  ]
+}
+
+========================================
+CONTENT RULES
+========================================
+SUMMARY
+- 3–4 sentences
+- Professional, ATS-optimized, concise
+- Aligned directly to the job description
+JOB TITLES IN HEADER AND EACH COMPANY
+- 2–4 words
+- Common industry titles aligned with the job description
+- Follow a logical career progression
+SKILLS
+- 30–35 total skills
+- Categorized
+- Must include technologies from the job description
+- Only include technologies released before the experience period
+EDUCATION DEGREE RULES:
+Only modify the degree if it is not related to the job description.
+- Each degree should be appropriate for the job description.
+- Each degree should be common in the industry.
+EXPERIENCE – SENTENCE RULES (VERY IMPORTANT)
+- Third-person only without the name, and he or she
+- No bullet symbols
+- Each sentence must be 150–250 characters and contain detailed, technically rich descriptions of your role, specific contributions, and technologies used.
+- Each sentence must end with a period
+- No sentence may be vague or generic
+- Each experience must reference company industry relevance
+SENTENCE COUNT PER COMPANY
+${sentenceCountRules || '- No sentence count rules specified'}
+Each sentence must be placed as a separate string inside the sentences array.
+
+========================================
+FORMATTING RULES
+========================================
+- JSON ONLY
+- ONE code block ONLY
+- No markdown outside JSON
+- No comments
+- No trailing commas
+- Valid JSON syntax
+- ATS-safe language only
+
+========================================
+FINAL VALIDATION
+========================================
+Before responding, verify:
+- All job description technologies are included
+- Sentence length requirements are met
+- Sentence count requirements are met
+- Job titles are aligned to the role
+- Output is valid JSON
+
+========================================
+JOB DESCRIPTION
+========================================
+`
+}
+
+const ROLE_BASED_PROMPT = `You are a professional resume writer. Based on the following job description, tailor my resume to highlight the most relevant skills and experiences. Rewrite bullet points to use strong action verbs and quantify achievements where possible. Ensure the resume is ATS-friendly and optimized for the target role.
 
 Job Description:
 [Paste the job description here]
@@ -771,15 +891,15 @@ Instructions:
 4. Keep the tone professional and concise
 5. Return the result as a JSON object matching the resume schema`
 
-function RightSidebar({ jsonInput, onJsonChange }: {
-  jsonInput: string; onJsonChange: (v: string) => void
+function RightSidebar({ jsonInput, onJsonChange, aiPrompt }: {
+  jsonInput: string; onJsonChange: (v: string) => void; aiPrompt: string
 }) {
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [pastedJson, setPastedJson] = useState(false)
 
   const handleCopyPrompt = async () => {
     try {
-      await navigator.clipboard.writeText(SAMPLE_AI_PROMPT)
+      await navigator.clipboard.writeText(aiPrompt)
       setCopiedPrompt(true)
       setTimeout(() => setCopiedPrompt(false), 2000)
     } catch { /* clipboard not available */ }
@@ -809,7 +929,7 @@ function RightSidebar({ jsonInput, onJsonChange }: {
           <div className="px-4 pb-4 border-t border-[var(--border)]">
             <textarea
               readOnly
-              value={SAMPLE_AI_PROMPT}
+              value={aiPrompt}
               className="w-full h-64 mt-3 px-3 py-2.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-xs leading-relaxed resize-none focus:outline-none font-mono cursor-default"
             />
           </div>
@@ -840,8 +960,14 @@ function RightSidebar({ jsonInput, onJsonChange }: {
 
 export default function Preview() {
   const [settings, setSettings] = useLocalStorage<ResumeSettings>('resume-tailor:settings', DEFAULT_SETTINGS)
+  const [profile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
   const [zoom, setZoom] = useState(80)
   const [jsonInput, setJsonInput] = useState('')
+
+  const aiPrompt = useMemo(() => {
+    if (profile.roleBasedJobTitle) return ROLE_BASED_PROMPT
+    return buildAiPrompt(profile)
+  }, [profile])
 
   useEffect(() => {
     if (GOOGLE_FONTS.includes(settings.primary.fontFamily)) {
@@ -882,7 +1008,7 @@ export default function Preview() {
         </div>
       </div>
 
-      <RightSidebar jsonInput={jsonInput} onJsonChange={setJsonInput} />
+      <RightSidebar jsonInput={jsonInput} onJsonChange={setJsonInput} aiPrompt={aiPrompt} />
     </div>
   )
 }

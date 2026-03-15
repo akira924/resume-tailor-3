@@ -1,58 +1,14 @@
 import { useLocalStorage } from '../hooks/useLocalStorage'
-
-interface WorkExperience {
-  company: string
-  jobTitle: string
-  period: string
-  location: string
-  bulletPoints: string
-}
-
-interface Education {
-  institution: string
-  degreeMajor: string
-  period: string
-}
-
-interface Certification {
-  institution: string
-  certification: string
-  date: string
-}
-
-interface ProfileData {
-  fullName: string
-  email: string
-  phone: string
-  location: string
-  linkedIn: string
-  gitHub: string
-  website: string
-  roleBasedJobTitle: boolean
-  seniority: string
-  workExperiences: WorkExperience[]
-  educations: Education[]
-  certifications: Certification[]
-}
-
-const emptyWork: WorkExperience = { company: '', jobTitle: '', period: '', location: '', bulletPoints: '' }
-const emptyEdu: Education = { institution: '', degreeMajor: '', period: '' }
-const emptyCert: Certification = { institution: '', certification: '', date: '' }
-
-const DEFAULT_PROFILE: ProfileData = {
-  fullName: '',
-  email: '',
-  phone: '',
-  location: '',
-  linkedIn: '',
-  gitHub: '',
-  website: '',
-  roleBasedJobTitle: false,
-  seniority: '',
-  workExperiences: [{ ...emptyWork }],
-  educations: [{ ...emptyEdu }],
-  certifications: [{ ...emptyCert }],
-}
+import {
+  type WorkExperience,
+  type Education,
+  type Certification,
+  type ProfileData,
+  emptyWork,
+  emptyEdu,
+  emptyCert,
+  DEFAULT_PROFILE,
+} from '../types/profile'
 
 const inputClass =
   'w-full px-3 py-2 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] text-sm placeholder:text-[var(--text)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-border)] transition-colors'
