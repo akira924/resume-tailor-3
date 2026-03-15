@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { type ProfileData, DEFAULT_PROFILE } from '../types/profile'
+import { generateResumePdf } from '../utils/generatePdf'
 
 // ── Types ────────────────────────────────────────────
 
@@ -1254,6 +1255,10 @@ export default function Preview() {
     return buildResumeData(profile, jsonInput) || SAMPLE_DATA
   }, [profile, jsonInput])
 
+  const handleDownloadPdf = useCallback(() => {
+    generateResumePdf(resumeData)
+  }, [resumeData])
+
   useEffect(() => {
     if (GOOGLE_FONTS.includes(settings.primary.fontFamily)) {
       const id = 'resume-preview-font'
@@ -1290,7 +1295,7 @@ export default function Preview() {
             <ZoomControls zoom={zoom} onZoomChange={setZoom} />
             <div className="w-px h-5 bg-[var(--border)]" />
             <button
-              onClick={() => window.print()}
+              onClick={handleDownloadPdf}
               className="w-7 h-7 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] cursor-pointer hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors flex items-center justify-center"
               title="Download PDF"
             >
