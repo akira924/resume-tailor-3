@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 // ── Types ────────────────────────────────────────────
 
@@ -726,7 +727,7 @@ function ResumePreview({ settings, zoom }: { settings: ResumeSettings; zoom: num
 // ── Main Component ───────────────────────────────────
 
 export default function Preview() {
-  const [settings, setSettings] = useState<ResumeSettings>(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useLocalStorage<ResumeSettings>('resume-tailor:settings', DEFAULT_SETTINGS)
   const [zoom, setZoom] = useState(80)
 
   useEffect(() => {

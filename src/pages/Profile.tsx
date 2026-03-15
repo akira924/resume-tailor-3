@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 interface WorkExperience {
   company: string
@@ -20,9 +20,35 @@ interface Certification {
   date: string
 }
 
+interface ProfileData {
+  fullName: string
+  email: string
+  phone: string
+  location: string
+  linkedIn: string
+  gitHub: string
+  website: string
+  workExperiences: WorkExperience[]
+  educations: Education[]
+  certifications: Certification[]
+}
+
 const emptyWork: WorkExperience = { company: '', jobTitle: '', period: '', location: '', bulletPoints: '' }
 const emptyEdu: Education = { institution: '', degreeMajor: '', period: '' }
 const emptyCert: Certification = { institution: '', certification: '', date: '' }
+
+const DEFAULT_PROFILE: ProfileData = {
+  fullName: '',
+  email: '',
+  phone: '',
+  location: '',
+  linkedIn: '',
+  gitHub: '',
+  website: '',
+  workExperiences: [{ ...emptyWork }],
+  educations: [{ ...emptyEdu }],
+  certifications: [{ ...emptyCert }],
+}
 
 const inputClass =
   'w-full px-3 py-2 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] text-sm placeholder:text-[var(--text)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-border)] transition-colors'
@@ -66,29 +92,23 @@ function AddButton({ onClick, children }: { onClick: () => void; children: React
 }
 
 export default function Profile() {
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [location, setLocation] = useState('')
+  const [profile, setProfile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
 
-  const [linkedIn, setLinkedIn] = useState('')
-  const [gitHub, setGitHub] = useState('')
-  const [website, setWebsite] = useState('')
+  const { fullName, email, phone, location, linkedIn, gitHub, website, workExperiences, educations, certifications } = profile
 
-  const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([{ ...emptyWork }])
-  const [educations, setEducations] = useState<Education[]>([{ ...emptyEdu }])
-  const [certifications, setCertifications] = useState<Certification[]>([{ ...emptyCert }])
+  const set = <K extends keyof ProfileData>(key: K, val: ProfileData[K]) =>
+    setProfile(prev => ({ ...prev, [key]: val }))
 
   function updateWork(index: number, field: keyof WorkExperience, value: string) {
-    setWorkExperiences(prev => prev.map((w, i) => (i === index ? { ...w, [field]: value } : w)))
+    set('workExperiences', workExperiences.map((w, i) => (i === index ? { ...w, [field]: value } : w)))
   }
 
   function updateEdu(index: number, field: keyof Education, value: string) {
-    setEducations(prev => prev.map((e, i) => (i === index ? { ...e, [field]: value } : e)))
+    set('educations', educations.map((e, i) => (i === index ? { ...e, [field]: value } : e)))
   }
 
   function updateCert(index: number, field: keyof Certification, value: string) {
-    setCertifications(prev => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
+    set('certifications', certifications.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
   }
 
   return (
@@ -101,19 +121,19 @@ export default function Profile() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Full Name</label>
-              <input type="text" className={inputClass} placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} />
+              <input type="text" className={inputClass} placeholder="John Doe" value={fullName} onChange={e => set('fullName', e.target.value)} />
             </div>
             <div>
               <label className={labelClass}>Email Address</label>
-              <input type="text" className={inputClass} placeholder="john@example.com" value={email} onChange={e => setEmail(e.target.value)} />
+              <input type="text" className={inputClass} placeholder="john@example.com" value={email} onChange={e => set('email', e.target.value)} />
             </div>
             <div>
               <label className={labelClass}>Phone Number</label>
-              <input type="text" className={inputClass} placeholder="+1 (555) 123-4567" value={phone} onChange={e => setPhone(e.target.value)} />
+              <input type="text" className={inputClass} placeholder="+1 (555) 123-4567" value={phone} onChange={e => set('phone', e.target.value)} />
             </div>
             <div>
               <label className={labelClass}>Location</label>
-              <input type="text" className={inputClass} placeholder="New York, NY" value={location} onChange={e => setLocation(e.target.value)} />
+              <input type="text" className={inputClass} placeholder="New York, NY" value={location} onChange={e => set('location', e.target.value)} />
             </div>
           </div>
         </section>
@@ -123,26 +143,26 @@ export default function Profile() {
           <div className="grid grid-cols-1 gap-4">
             <div>
               <label className={labelClass}>LinkedIn</label>
-              <input type="text" className={inputClass} placeholder="linkedin.com/in/johndoe" value={linkedIn} onChange={e => setLinkedIn(e.target.value)} />
+              <input type="text" className={inputClass} placeholder="linkedin.com/in/johndoe" value={linkedIn} onChange={e => set('linkedIn', e.target.value)} />
             </div>
             <div>
               <label className={labelClass}>GitHub</label>
-              <input type="text" className={inputClass} placeholder="github.com/johndoe" value={gitHub} onChange={e => setGitHub(e.target.value)} />
+              <input type="text" className={inputClass} placeholder="github.com/johndoe" value={gitHub} onChange={e => set('gitHub', e.target.value)} />
             </div>
             <div>
               <label className={labelClass}>Website</label>
-              <input type="text" className={inputClass} placeholder="johndoe.dev" value={website} onChange={e => setWebsite(e.target.value)} />
+              <input type="text" className={inputClass} placeholder="johndoe.dev" value={website} onChange={e => set('website', e.target.value)} />
             </div>
           </div>
         </section>
       </div>
 
       <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading action={<AddButton onClick={() => setWorkExperiences(prev => [...prev, { ...emptyWork }])}>+ Add</AddButton>}>Work Experience</SectionHeading>
+        <SectionHeading action={<AddButton onClick={() => set('workExperiences', [...workExperiences, { ...emptyWork }])}>+ Add</AddButton>}>Work Experience</SectionHeading>
         <div className="space-y-4">
           {workExperiences.map((work, i) => (
             <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
-              {workExperiences.length > 1 && <RemoveButton onClick={() => setWorkExperiences(prev => prev.filter((_, j) => j !== i))} />}
+              {workExperiences.length > 1 && <RemoveButton onClick={() => set('workExperiences', workExperiences.filter((_, j) => j !== i))} />}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[3fr_3fr_2fr_2fr_1fr] gap-3">
                 <div>
                   <label className={labelClass}>Company Name</label>
@@ -171,11 +191,11 @@ export default function Profile() {
       </section>
 
       <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading action={<AddButton onClick={() => setEducations(prev => [...prev, { ...emptyEdu }])}>+ Add</AddButton>}>Education</SectionHeading>
+        <SectionHeading action={<AddButton onClick={() => set('educations', [...educations, { ...emptyEdu }])}>+ Add</AddButton>}>Education</SectionHeading>
         <div className="space-y-4">
           {educations.map((edu, i) => (
             <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
-              {educations.length > 1 && <RemoveButton onClick={() => setEducations(prev => prev.filter((_, j) => j !== i))} />}
+              {educations.length > 1 && <RemoveButton onClick={() => set('educations', educations.filter((_, j) => j !== i))} />}
               <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr] gap-3">
                 <div>
                   <label className={labelClass}>Institution</label>
@@ -196,11 +216,11 @@ export default function Profile() {
       </section>
 
       <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading action={<AddButton onClick={() => setCertifications(prev => [...prev, { ...emptyCert }])}>+ Add</AddButton>}>Certifications</SectionHeading>
+        <SectionHeading action={<AddButton onClick={() => set('certifications', [...certifications, { ...emptyCert }])}>+ Add</AddButton>}>Certifications</SectionHeading>
         <div className="space-y-4">
           {certifications.map((cert, i) => (
             <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
-              {certifications.length > 1 && <RemoveButton onClick={() => setCertifications(prev => prev.filter((_, j) => j !== i))} />}
+              {certifications.length > 1 && <RemoveButton onClick={() => set('certifications', certifications.filter((_, j) => j !== i))} />}
               <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr] gap-3">
                 <div>
                   <label className={labelClass}>Institution</label>
