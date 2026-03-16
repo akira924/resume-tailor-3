@@ -923,20 +923,36 @@ export default function Preview() {
 
   const resumeData = jsonParsed || SAMPLE_DATA
 
-  const pdfUrl = useMemo(() => {
-    if (!jsonParsed) return null
-    try {
-      return generateResumePdfBlobUrl(resumeData, settings)
-    } catch {
-      return null
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const prevPdfUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!jsonParsed) {
+      if (prevPdfUrlRef.current) URL.revokeObjectURL(prevPdfUrlRef.current)
+      prevPdfUrlRef.current = null
+      setPdfUrl(null)
+      return
     }
+
+    const timer = setTimeout(() => {
+      try {
+        const newUrl = generateResumePdfBlobUrl(resumeData, settings)
+        if (prevPdfUrlRef.current) URL.revokeObjectURL(prevPdfUrlRef.current)
+        prevPdfUrlRef.current = newUrl
+        setPdfUrl(newUrl)
+      } catch {
+        setPdfUrl(null)
+      }
+    }, 400)
+
+    return () => clearTimeout(timer)
   }, [jsonParsed, resumeData, settings])
 
   useEffect(() => {
     return () => {
-      if (pdfUrl) URL.revokeObjectURL(pdfUrl)
+      if (prevPdfUrlRef.current) URL.revokeObjectURL(prevPdfUrlRef.current)
     }
-  }, [pdfUrl])
+  }, [])
 
   const handleDownloadPdf = useCallback(() => {
     try {
