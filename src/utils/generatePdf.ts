@@ -54,15 +54,19 @@ function pdfFont(family: string): string {
 }
 
 export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings): void {
-  const MARGIN = settings.primary.pageMargin * 25.4
+  const MARGIN = settings.pageLayout.pageMargin * 25.4
   const font = pdfFont(settings.primary.fontFamily)
   const bodySize = settings.primary.fontSize
   const bodyColor = settings.primary.fontColor
   const labelSize = bodySize + 1
-  const { header, sectionTitle, experienceLayout } = settings
-
   const PT_MM = 0.352778
   const CAP_RATIO = 0.75
+
+  const { pageLayout, header, sectionTitle, experienceLayout } = settings
+  const lineSpacing = pageLayout.lineSpacing
+  const sectionGap = pageLayout.sectionGap * PT_MM
+  const baseLH = bodySize * PT_MM * lineSpacing
+  const labelLH = labelSize * PT_MM * lineSpacing
 
   const doc = new jsPDF({ unit: 'mm', format: 'letter' })
   const cw = PAGE_W - 2 * MARGIN
@@ -77,7 +81,7 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
 
   function heading(title: string) {
     pageBreak(14)
-    y += 5
+    y += sectionGap
     doc.setFont(font, sectionTitle.bold ? 'bold' : 'normal')
     doc.setFontSize(sectionTitle.fontSize)
     doc.setTextColor(sectionTitle.fontColor)
@@ -93,7 +97,7 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
       doc.setLineWidth(0.3)
       doc.line(MARGIN, y, PAGE_W - MARGIN, y)
     }
-    y += 5
+    y += sectionGap
   }
 
   function wrappedText(
@@ -102,7 +106,7 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
     style: 'normal' | 'italic' | 'bold' = 'normal',
     color: string = bodyColor,
     indent: number = 0,
-    lh: number = bodySize * 0.42,
+    lh: number = baseLH,
   ) {
     doc.setFont(font, style)
     doc.setFontSize(size)
@@ -181,7 +185,7 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
 
     if (contactParts.length) {
       let rightY = startY
-      const contactLH = bodySize * 0.42
+      const contactLH = baseLH
       doc.setFont(font, 'normal')
       doc.setFontSize(bodySize)
       doc.setTextColor(header.contactFontColor)
@@ -267,7 +271,7 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
         } else {
           doc.text(line, MARGIN, y)
         }
-        y += bodySize * 0.42
+        y += baseLH
       }
       y += 1
     }
@@ -300,13 +304,13 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
       const skillLines: string[] = doc.splitTextToSize(skillsText, firstLineFit)
 
       doc.text(skillLines[0] || '', MARGIN + catW, y)
-      y += bodySize * 0.45
+      y += baseLH
 
       if (skillLines.length > 1) {
         const drawn = skillLines[0].length
         const rest = skillsText.slice(drawn).trim()
         if (rest) {
-          wrappedText(rest, bodySize, 'normal', bodyColor, 0, bodySize * 0.42)
+          wrappedText(rest, bodySize)
         }
       }
     }
@@ -321,7 +325,7 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
       const exp = data.experience[i]
       pageBreak(14)
 
-      const rowLH = labelSize * 0.43
+      const rowLH = labelLH
 
       switch (experienceLayout) {
         case 'company-first':
@@ -370,7 +374,7 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
         const prefixW = doc.getTextWidth(prefix)
         doc.text(prefix, MARGIN + 1, y)
 
-        const bulletLH = bodySize * 0.38
+        const bulletLH = baseLH
         const bLines: string[] = doc.splitTextToSize(bullet, cw - prefixW - 1)
         for (let j = 0; j < bLines.length; j++) {
           if (j > 0) pageBreak(bulletLH)
@@ -393,13 +397,13 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
       pageBreak(10)
 
       twoColumnRow(edu.institution, edu.period, 'bold', labelSize, bodySize)
-      y += labelSize * 0.43
+      y += labelLH
 
       doc.setFont(font, 'italic')
       doc.setFontSize(bodySize)
       doc.setTextColor(bodyColor)
       doc.text(edu.degree, MARGIN, y)
-      y += bodySize * 0.5
+      y += baseLH
     }
   }
 
@@ -412,14 +416,14 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
       pageBreak(10)
 
       twoColumnRow(cert.certification, cert.date, 'bold', labelSize, bodySize)
-      y += labelSize * 0.43
+      y += labelLH
 
       if (cert.institution) {
         doc.setFont(font, 'italic')
         doc.setFontSize(bodySize)
         doc.setTextColor(bodyColor)
         doc.text(cert.institution, MARGIN, y)
-        y += labelSize * 0.43
+        y += labelLH
       }
     }
   }

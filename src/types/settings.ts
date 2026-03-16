@@ -8,7 +8,6 @@ export interface PrimarySettings {
   fontFamily: string
   fontSize: number
   fontColor: string
-  pageMargin: number
 }
 
 export interface HeaderSettings {
@@ -28,10 +27,17 @@ export interface SectionTitleSettings {
   alignment: 'left' | 'center'
 }
 
+export interface PageLayoutSettings {
+  pageMargin: number
+  lineSpacing: number
+  sectionGap: number
+}
+
 export type ExperienceLayout = 'single-row' | 'company-first' | 'role-first'
 
 export interface ResumeSettings {
   primary: PrimarySettings
+  pageLayout: PageLayoutSettings
   header: HeaderSettings
   sectionTitle: SectionTitleSettings
   experienceLayout: ExperienceLayout

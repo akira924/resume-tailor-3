@@ -5,6 +5,7 @@ import { generateResumePdf } from '../utils/generatePdf'
 import type {
   FontProps,
   PrimarySettings,
+  PageLayoutSettings,
   HeaderSettings,
   SectionTitleSettings,
   ExperienceLayout,
@@ -29,7 +30,8 @@ const FONT_OPTIONS = [
 ]
 
 const DEFAULT_SETTINGS: ResumeSettings = {
-  primary: { fontFamily: 'Inter', fontSize: 10, fontColor: '#333333', pageMargin: 0.75, lineSpacing: 1.2, sectionGap: 12 },
+  primary: { fontFamily: 'Inter', fontSize: 10, fontColor: '#333333' },
+  pageLayout: { pageMargin: 0.75, lineSpacing: 1.2, sectionGap: 12 },
   header: {
     name: { fontSize: 24, fontColor: '#111827', bold: true },
     jobTitle: { fontSize: 14, fontColor: '#4b5563', bold: false },
@@ -338,9 +340,28 @@ function PrimarySection({ value, onChange }: {
         <span className="text-[10px] text-[var(--text)] font-mono">{value.fontColor}</span>
         <ColorInput value={value.fontColor} onChange={(v) => set('fontColor', v)} />
       </FieldRow>
+    </SettingsGroup>
+  )
+}
+
+function PageLayoutSection({ value, onChange }: {
+  value: PageLayoutSettings; onChange: (v: PageLayoutSettings) => void
+}) {
+  const set = <K extends keyof PageLayoutSettings>(k: K, v: PageLayoutSettings[K]) =>
+    onChange({ ...value, [k]: v })
+
+  return (
+    <SettingsGroup title="Page Layout">
       <FieldRow label="Page Margin">
         <NumInput value={value.pageMargin} onChange={(v) => set('pageMargin', v)} min={0.25} max={1.5} step={0.125} className="w-14" />
         <span className="text-[10px] text-[var(--text)]">in</span>
+      </FieldRow>
+      <FieldRow label="Line Spacing">
+        <NumInput value={value.lineSpacing} onChange={(v) => set('lineSpacing', v)} min={1} max={2.5} step={0.05} className="w-14" />
+      </FieldRow>
+      <FieldRow label="Section Gap">
+        <NumInput value={value.sectionGap} onChange={(v) => set('sectionGap', v)} min={0} max={32} step={1} className="w-14" />
+        <span className="text-[10px] text-[var(--text)]">pt</span>
       </FieldRow>
     </SettingsGroup>
   )
@@ -571,7 +592,7 @@ function ResumeHeader({ settings, data }: { settings: ResumeSettings; data: Resu
   const contactStyle: React.CSSProperties = {
     color: header.contactFontColor,
     fontSize: `${settings.primary.fontSize}pt`,
-    lineHeight: 1.5,
+    lineHeight: settings.pageLayout.lineSpacing,
   }
 
   const useEmbeddedLinks = header.alignment === 'left' || header.alignment === 'center'
@@ -658,7 +679,7 @@ function ResumeHeader({ settings, data }: { settings: ResumeSettings; data: Resu
 }
 
 function ResumeSectionTitle({ settings, children }: { settings: ResumeSettings; children: string }) {
-  const { sectionTitle } = settings
+  const { sectionTitle, pageLayout } = settings
   return (
     <div
       style={{
@@ -669,7 +690,7 @@ function ResumeSectionTitle({ settings, children }: { settings: ResumeSettings; 
         letterSpacing: sectionTitle.capitalize ? '0.05em' : undefined,
         borderBottom: sectionTitle.borderVisible ? `1.5px solid ${sectionTitle.fontColor}` : 'none',
         paddingBottom: sectionTitle.borderVisible ? 3 : 0,
-        marginTop: 14,
+        marginTop: pageLayout.sectionGap,
         marginBottom: 8,
         textAlign: sectionTitle.alignment,
         lineHeight: 1.3,
@@ -737,7 +758,7 @@ function ExperienceEntry({ settings, entry }: {
   return (
     <div style={{ marginBottom: 10 }}>
       {header}
-      <ul style={{ margin: '4px 0 0 0', paddingLeft: 18, listStyleType: 'disc', fontSize: baseFontSize, color, lineHeight: 1.5 }}>
+      <ul style={{ margin: '4px 0 0 0', paddingLeft: 18, listStyleType: 'disc', fontSize: baseFontSize, color, lineHeight: settings.pageLayout.lineSpacing }}>
         {entry.bullets.map((b, i) => (
           <li key={i} style={{ marginBottom: 1 }}>{b}</li>
         ))}
@@ -748,7 +769,7 @@ function ExperienceEntry({ settings, entry }: {
 
 function ResumePreview({ settings, zoom, data }: { settings: ResumeSettings; zoom: number; data: ResumeData }) {
   const scale = zoom / 100
-  const margin = settings.primary.pageMargin * 96
+  const margin = settings.pageLayout.pageMargin * 96
   const contentRef = useRef<HTMLDivElement>(null)
   const [pageCount, setPageCount] = useState(1)
 
@@ -768,6 +789,7 @@ function ResumePreview({ settings, zoom, data }: { settings: ResumeSettings; zoo
     fontFamily: `"${settings.primary.fontFamily}", sans-serif`,
     fontSize: `${settings.primary.fontSize}pt`,
     color: settings.primary.fontColor,
+    lineHeight: settings.pageLayout.lineSpacing,
     boxSizing: 'border-box',
   }
 
@@ -778,7 +800,7 @@ function ResumePreview({ settings, zoom, data }: { settings: ResumeSettings; zoo
       {data.summary && (
         <>
           <ResumeSectionTitle settings={settings}>Professional Summary</ResumeSectionTitle>
-          <p style={{ margin: 0, lineHeight: 1.55, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
+          <p style={{ margin: 0, lineHeight: settings.pageLayout.lineSpacing, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
             {data.summary}
           </p>
         </>
@@ -787,7 +809,7 @@ function ResumePreview({ settings, zoom, data }: { settings: ResumeSettings; zoo
       {data.skills.length > 0 && (
         <>
           <ResumeSectionTitle settings={settings}>Technical Skills</ResumeSectionTitle>
-          <div style={{ margin: 0, lineHeight: 1.6, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
+          <div style={{ margin: 0, lineHeight: settings.pageLayout.lineSpacing, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
             {data.skills.map((cat, i) => (
               <div key={i} style={{ marginBottom: i < data.skills.length - 1 ? 2 : 0 }}>
                 <span style={{ fontWeight: 600 }}>{cat.category}:</span>{' '}
@@ -1215,7 +1237,26 @@ function RightSidebar({ jsonInput, onJsonChange, aiPrompt, jsonError }: {
 // ── Main Component ───────────────────────────────────
 
 export default function Preview() {
-  const [settings, setSettings] = useLocalStorage<ResumeSettings>('resume-tailor:settings', DEFAULT_SETTINGS)
+  const [rawSettings, setSettings] = useLocalStorage<ResumeSettings>('resume-tailor:settings', DEFAULT_SETTINGS)
+  const settings = useMemo<ResumeSettings>(() => ({
+    ...DEFAULT_SETTINGS,
+    ...rawSettings,
+    primary: { ...DEFAULT_SETTINGS.primary, ...rawSettings.primary },
+    pageLayout: {
+      ...DEFAULT_SETTINGS.pageLayout,
+      ...rawSettings.pageLayout,
+      pageMargin: rawSettings.pageLayout?.pageMargin
+        ?? (rawSettings.primary as unknown as Record<string, unknown>)?.pageMargin as number
+        ?? DEFAULT_SETTINGS.pageLayout.pageMargin,
+    },
+    header: {
+      ...DEFAULT_SETTINGS.header,
+      ...rawSettings.header,
+      name: { ...DEFAULT_SETTINGS.header.name, ...rawSettings.header?.name },
+      jobTitle: { ...DEFAULT_SETTINGS.header.jobTitle, ...rawSettings.header?.jobTitle },
+    },
+    sectionTitle: { ...DEFAULT_SETTINGS.sectionTitle, ...rawSettings.sectionTitle },
+  }), [rawSettings])
   const [profile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
   const [zoom, setZoom] = useState(80)
   const [jsonInput, setJsonInput] = useState('')
@@ -1260,6 +1301,7 @@ export default function Preview() {
         <div className="p-5 space-y-4">
           <h1 className="text-xl font-bold text-[var(--text-h)] tracking-tight">Customize Resume</h1>
           <PrimarySection value={settings.primary} onChange={(v) => setSettings((s) => ({ ...s, primary: v }))} />
+          <PageLayoutSection value={settings.pageLayout} onChange={(v) => setSettings((s) => ({ ...s, pageLayout: v }))} />
           <HeaderSection value={settings.header} onChange={(v) => setSettings((s) => ({ ...s, header: v }))} />
           <SectionTitleSection value={settings.sectionTitle} onChange={(v) => setSettings((s) => ({ ...s, sectionTitle: v }))} />
           <ExperienceSection value={settings.experienceLayout} onChange={(v) => setSettings((s) => ({ ...s, experienceLayout: v }))} />
