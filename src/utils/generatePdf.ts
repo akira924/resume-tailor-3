@@ -53,7 +53,7 @@ function pdfFont(family: string): string {
   return SERIF_FONTS.has(family) ? 'times' : 'helvetica'
 }
 
-export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings): void {
+function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
   const MARGIN = settings.pageLayout.pageMargin * 25.4
   const font = pdfFont(settings.primary.fontFamily)
   const bodySize = settings.primary.fontSize
@@ -428,10 +428,18 @@ export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings)
     }
   }
 
-  // ── Save ────────────────────────────────────────────
+  return doc
+}
 
+export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings): void {
+  const doc = buildResumePdf(data, settings)
   const safeName = data.name
     ? data.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
     : 'Resume'
   doc.save(`${safeName}_Resume.pdf`)
+}
+
+export function generateResumePdfBlobUrl(data: PdfResumeData, settings: ResumeSettings): string {
+  const doc = buildResumePdf(data, settings)
+  return doc.output('bloburl').toString()
 }

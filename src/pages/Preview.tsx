@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { type ProfileData, DEFAULT_PROFILE } from '../types/profile'
-import { generateResumePdf } from '../utils/generatePdf'
+import { generateResumePdf, generateResumePdfBlobUrl } from '../utils/generatePdf'
 import type {
   FontProps,
   PrimarySettings,
@@ -13,8 +13,6 @@ import type {
 } from '../types/settings'
 
 // ── Constants ────────────────────────────────────────
-
-const GOOGLE_FONTS = ['Roboto', 'Lato', 'Open Sans', 'Merriweather', 'Playfair Display']
 
 const FONT_OPTIONS = [
   { value: 'Inter', label: 'Inter' },
@@ -91,9 +89,6 @@ const SAMPLE = {
     { category: 'Databases', skills: ['PostgreSQL', 'Redis'] },
   ],
 }
-
-const PAGE_W = 816
-const PAGE_H = 1056
 
 // ── Resume Data Types & Helpers ─────────────────────
 
@@ -547,357 +542,6 @@ function ExperienceSection({ value, onChange }: {
   )
 }
 
-// ── Resume Preview Components ────────────────────────
-
-function ZoomControls({ zoom, onZoomChange }: { zoom: number; onZoomChange: (z: number) => void }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <button
-        onClick={() => onZoomChange(Math.max(25, zoom - 10))}
-        className="w-7 h-7 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] text-sm font-bold cursor-pointer hover:bg-[var(--accent-bg)] transition-colors flex items-center justify-center"
-      >
-        −
-      </button>
-      <button
-        onClick={() => onZoomChange(100)}
-        className="min-w-[3.2rem] h-7 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] text-[11px] font-medium cursor-pointer hover:bg-[var(--accent-bg)] transition-colors"
-        title="Reset to 100%"
-      >
-        {zoom}%
-      </button>
-      <button
-        onClick={() => onZoomChange(Math.min(200, zoom + 10))}
-        className="w-7 h-7 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] text-sm font-bold cursor-pointer hover:bg-[var(--accent-bg)] transition-colors flex items-center justify-center"
-      >
-        +
-      </button>
-    </div>
-  )
-}
-
-function ResumeHeader({ settings, data }: { settings: ResumeSettings; data: ResumeData }) {
-  const { header } = settings
-  const nameStyle: React.CSSProperties = {
-    fontSize: `${header.name.fontSize}pt`,
-    color: header.name.fontColor,
-    fontWeight: header.name.bold ? 700 : 400,
-    lineHeight: 1.2,
-  }
-  const titleStyle: React.CSSProperties = {
-    fontSize: `${header.jobTitle.fontSize}pt`,
-    color: header.jobTitle.fontColor,
-    fontWeight: header.jobTitle.bold ? 700 : 400,
-    lineHeight: 1.3,
-  }
-  const contactStyle: React.CSSProperties = {
-    color: header.contactFontColor,
-    fontSize: `${settings.primary.fontSize}pt`,
-    lineHeight: settings.pageLayout.lineSpacing,
-  }
-
-  const useEmbeddedLinks = header.alignment === 'left' || header.alignment === 'center'
-  const linkStyle: React.CSSProperties = { color: header.contactFontColor, textDecoration: 'underline' }
-
-  const onlinePresence: { label: string; url: string }[] = [
-    ...(data.linkedIn ? [{ label: 'LinkedIn', url: `https://${data.linkedIn}` }] : []),
-    ...(data.gitHub ? [{ label: 'GitHub', url: `https://${data.gitHub}` }] : []),
-    ...(data.website ? [{ label: 'Website', url: `https://${data.website}` }] : []),
-  ]
-
-  const contactInlineItems: React.ReactNode[] = [
-    ...(data.email ? [<span key="email">{data.email}</span>] : []),
-    ...(data.phone ? [<span key="phone">{data.phone}</span>] : []),
-    ...(useEmbeddedLinks
-      ? onlinePresence.map((op) => (
-          <a key={op.label} href={op.url} style={linkStyle} target="_blank" rel="noreferrer">{op.label}</a>
-        ))
-      : onlinePresence.map((op) => (
-          <span key={op.label}>{op.url.replace('https://', '')}</span>
-        ))
-    ),
-    ...(data.location ? [<span key="location">{data.location}</span>] : []),
-  ]
-
-  const contactInline = (
-    <>
-      {contactInlineItems.map((item, i) => (
-        <span key={i}>
-          {i > 0 && <span>{' '}|{' '}</span>}
-          {item}
-        </span>
-      ))}
-    </>
-  )
-
-  const hybridContactItems: React.ReactNode[] = [
-    ...(data.email ? [<div key="email">{data.email}</div>] : []),
-    ...(data.phone ? [<div key="phone">{data.phone}</div>] : []),
-    ...onlinePresence.map((op) => (
-      <div key={op.label}>{op.url.replace('https://', '')}</div>
-    )),
-    ...(data.location ? [<div key="location">{data.location}</div>] : []),
-  ]
-
-  const nameAndTitle = header.jobTitlePosition === 'beside' ? (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, justifyContent: header.alignment === 'center' ? 'center' : undefined }}>
-      <span style={nameStyle}>{data.name}</span>
-      <span style={titleStyle}>{data.jobTitle}</span>
-    </div>
-  ) : (
-    <div>
-      <div style={nameStyle}>{data.name}</div>
-      <div style={{ ...titleStyle, marginTop: 2 }}>{data.jobTitle}</div>
-    </div>
-  )
-
-  if (header.alignment === 'center') {
-    return (
-      <div style={{ textAlign: 'center', marginBottom: 16 }}>
-        {nameAndTitle}
-        <div style={{ ...contactStyle, marginTop: 4 }}>{contactInline}</div>
-      </div>
-    )
-  }
-
-  if (header.alignment === 'hybrid') {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-        <div>{nameAndTitle}</div>
-        <div style={{ ...contactStyle, textAlign: 'right' }}>
-          {hybridContactItems}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ marginBottom: 16 }}>
-      {nameAndTitle}
-      <div style={{ ...contactStyle, marginTop: 4 }}>{contactInline}</div>
-    </div>
-  )
-}
-
-function ResumeSectionTitle({ settings, children }: { settings: ResumeSettings; children: string }) {
-  const { sectionTitle, pageLayout } = settings
-  return (
-    <div
-      style={{
-        fontSize: `${sectionTitle.fontSize}pt`,
-        color: sectionTitle.fontColor,
-        fontWeight: sectionTitle.bold ? 700 : 400,
-        textTransform: sectionTitle.capitalize ? 'uppercase' : 'none',
-        letterSpacing: sectionTitle.capitalize ? '0.05em' : undefined,
-        borderBottom: sectionTitle.borderVisible ? `1.5px solid ${sectionTitle.fontColor}` : 'none',
-        paddingBottom: sectionTitle.borderVisible ? 3 : 0,
-        marginTop: pageLayout.sectionGap,
-        marginBottom: 8,
-        textAlign: sectionTitle.alignment,
-        lineHeight: 1.3,
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-function ExperienceEntry({ settings, entry }: {
-  settings: ResumeSettings
-  entry: ExperienceItem
-}) {
-  const baseFontSize = `${settings.primary.fontSize}pt`
-  const labelSize = `${settings.primary.fontSize + 1}pt`
-  const color = settings.primary.fontColor
-
-  const header = (() => {
-    switch (settings.experienceLayout) {
-      case 'single-row':
-        return (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: labelSize, color }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontWeight: 600 }}>{entry.company}</span>
-              <span style={{ fontWeight: 400 }}>–</span>
-              <span style={{ fontWeight: 500 }}>{entry.role}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, textAlign: 'right', fontSize: baseFontSize }}>
-              <span>{entry.period}</span>
-              <span style={{ fontWeight: 400 }}>|</span>
-              <span>{entry.location}</span>
-            </div>
-          </div>
-        )
-      case 'company-first':
-        return (
-          <div style={{ fontSize: labelSize, color }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 600 }}>{entry.company}</span>
-              <span style={{ fontSize: baseFontSize }}>{entry.location}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontStyle: 'italic' }}>{entry.role}</span>
-              <span style={{ fontSize: baseFontSize }}>{entry.period}</span>
-            </div>
-          </div>
-        )
-      case 'role-first':
-        return (
-          <div style={{ fontSize: labelSize, color }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 600 }}>{entry.role}</span>
-              <span style={{ fontSize: baseFontSize }}>{entry.period}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontStyle: 'italic' }}>{entry.company}</span>
-              <span style={{ fontSize: baseFontSize }}>{entry.location}</span>
-            </div>
-          </div>
-        )
-    }
-  })()
-
-  return (
-    <div style={{ marginBottom: 10 }}>
-      {header}
-      <ul style={{ margin: '4px 0 0 0', paddingLeft: 18, listStyleType: 'disc', fontSize: baseFontSize, color, lineHeight: settings.pageLayout.lineSpacing }}>
-        {entry.bullets.map((b, i) => (
-          <li key={i} style={{ marginBottom: 1 }}>{b}</li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-function ResumePreview({ settings, zoom, data }: { settings: ResumeSettings; zoom: number; data: ResumeData }) {
-  const scale = zoom / 100
-  const margin = settings.pageLayout.pageMargin * 96
-  const contentRef = useRef<HTMLDivElement>(null)
-  const [pageCount, setPageCount] = useState(1)
-
-  useEffect(() => {
-    if (contentRef.current) {
-      const pages = Math.max(1, Math.ceil(contentRef.current.scrollHeight / PAGE_H))
-      if (pages !== pageCount) setPageCount(pages)
-    }
-  })
-
-  const gap = 32
-  const totalHeight = pageCount * PAGE_H + (pageCount - 1) * gap
-
-  const contentStyle: React.CSSProperties = {
-    width: PAGE_W,
-    padding: margin,
-    fontFamily: `"${settings.primary.fontFamily}", sans-serif`,
-    fontSize: `${settings.primary.fontSize}pt`,
-    color: settings.primary.fontColor,
-    lineHeight: settings.pageLayout.lineSpacing,
-    boxSizing: 'border-box',
-  }
-
-  const resumeContent = (
-    <>
-      <ResumeHeader settings={settings} data={data} />
-
-      {data.summary && (
-        <>
-          <ResumeSectionTitle settings={settings}>Professional Summary</ResumeSectionTitle>
-          <p style={{ margin: 0, lineHeight: settings.pageLayout.lineSpacing, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
-            {data.summary}
-          </p>
-        </>
-      )}
-
-      {data.skills.length > 0 && (
-        <>
-          <ResumeSectionTitle settings={settings}>Technical Skills</ResumeSectionTitle>
-          <div style={{ margin: 0, lineHeight: settings.pageLayout.lineSpacing, fontSize: `${settings.primary.fontSize}pt`, color: settings.primary.fontColor }}>
-            {data.skills.map((cat, i) => (
-              <div key={i} style={{ marginBottom: i < data.skills.length - 1 ? 2 : 0 }}>
-                <span style={{ fontWeight: 600 }}>{cat.category}:</span>{' '}
-                {cat.skills.join(', ')}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {data.experience.length > 0 && (
-        <>
-          <ResumeSectionTitle settings={settings}>Experience</ResumeSectionTitle>
-          {data.experience.map((exp, i) => (
-            <ExperienceEntry key={i} settings={settings} entry={exp} />
-          ))}
-        </>
-      )}
-
-      {data.education.length > 0 && (
-        <>
-          <ResumeSectionTitle settings={settings}>Education</ResumeSectionTitle>
-          {data.education.map((edu, i) => (
-            <div key={i} style={{ fontSize: `${settings.primary.fontSize + 1}pt`, color: settings.primary.fontColor }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontWeight: 600 }}>{edu.institution}</span>
-                <span style={{ fontSize: `${settings.primary.fontSize}pt` }}>{edu.period}</span>
-              </div>
-              <div style={{ fontStyle: 'italic', fontSize: `${settings.primary.fontSize}pt` }}>{edu.degree}</div>
-            </div>
-          ))}
-        </>
-      )}
-
-      {data.certifications.length > 0 && (
-        <>
-          <ResumeSectionTitle settings={settings}>Certifications</ResumeSectionTitle>
-          {data.certifications.map((cert, i) => (
-            <div key={i} style={{ fontSize: `${settings.primary.fontSize + 1}pt`, color: settings.primary.fontColor }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontWeight: 600 }}>{cert.certification}</span>
-                <span style={{ fontSize: `${settings.primary.fontSize}pt` }}>{cert.date}</span>
-              </div>
-              {cert.institution && <div style={{ fontStyle: 'italic', fontSize: `${settings.primary.fontSize}pt` }}>{cert.institution}</div>}
-            </div>
-          ))}
-        </>
-      )}
-    </>
-  )
-
-  return (
-    <div style={{ width: PAGE_W * scale, height: totalHeight * scale, flexShrink: 0 }}>
-      <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: PAGE_W, position: 'relative' }}>
-        <div
-          ref={contentRef}
-          aria-hidden
-          data-no-print
-          style={{ ...contentStyle, position: 'absolute', visibility: 'hidden', pointerEvents: 'none' }}
-        >
-          {resumeContent}
-        </div>
-
-        {/* Visible pages */}
-        {Array.from({ length: pageCount }, (_, i) => (
-          <div
-            key={i}
-            data-resume-page
-            style={{
-              width: PAGE_W,
-              height: PAGE_H,
-              overflow: 'hidden',
-              background: '#fff',
-              boxShadow: '0 2px 24px rgba(0,0,0,0.12)',
-              position: 'relative',
-              marginBottom: i < pageCount - 1 ? gap : 0,
-            }}
-          >
-            <div style={{ ...contentStyle, position: 'absolute', top: -(i * PAGE_H) }}>
-              {resumeContent}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // ── Clipboard Button ────────────────────────────────
 
 function ClipboardButton({ type, onClick, copied }: {
@@ -1258,8 +902,8 @@ export default function Preview() {
     sectionTitle: { ...DEFAULT_SETTINGS.sectionTitle, ...rawSettings.sectionTitle },
   }), [rawSettings])
   const [profile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
-  const [zoom, setZoom] = useState(80)
   const [jsonInput, setJsonInput] = useState('')
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
 
   const aiPrompt = useMemo(() => {
     if (profile.roleBasedJobTitle) return buildRoleBasedAiPrompt(profile)
@@ -1276,24 +920,15 @@ export default function Preview() {
 
   const resumeData = jsonParsed || SAMPLE_DATA
 
+  useEffect(() => {
+    const url = generateResumePdfBlobUrl(resumeData, settings)
+    setPdfUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [resumeData, settings])
+
   const handleDownloadPdf = useCallback(() => {
     generateResumePdf(resumeData, settings)
   }, [resumeData, settings])
-
-  useEffect(() => {
-    if (GOOGLE_FONTS.includes(settings.primary.fontFamily)) {
-      const id = 'resume-preview-font'
-      let link = document.getElementById(id) as HTMLLinkElement | null
-      if (!link) {
-        link = document.createElement('link')
-        link.id = id
-        link.rel = 'stylesheet'
-        document.head.appendChild(link)
-      }
-      const family = settings.primary.fontFamily.replace(/ /g, '+')
-      link.href = `https://fonts.googleapis.com/css2?family=${family}:wght@300;400;500;600;700&display=swap`
-    }
-  }, [settings.primary.fontFamily])
 
   return (
     <div className="flex h-full min-h-0">
@@ -1309,17 +944,15 @@ export default function Preview() {
       </div>
 
       <div
-        className="flex-1 min-w-0 overflow-auto flex flex-col items-center"
+        className="flex-1 min-w-0 flex flex-col"
         style={{ backgroundColor: 'var(--border)' }}
       >
-        <div className="sticky top-0 z-10 w-full flex justify-center py-3 backdrop-blur-sm" data-no-print style={{ backgroundColor: 'color-mix(in srgb, var(--border) 80%, transparent)' }}>
+        <div className="shrink-0 z-10 w-full flex justify-center py-3 backdrop-blur-sm" data-no-print style={{ backgroundColor: 'color-mix(in srgb, var(--border) 80%, transparent)', borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3">
-            <ZoomControls zoom={zoom} onZoomChange={setZoom} />
-            <div className="w-px h-5 bg-[var(--border)]" />
             <button
               onClick={handleDownloadPdf}
               disabled={!!jsonError}
-              className={`w-7 h-7 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] transition-colors flex items-center justify-center ${
+              className={`h-7 px-3 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-xs font-medium transition-colors flex items-center gap-1.5 ${
                 jsonError
                   ? 'text-[var(--text)] opacity-40 cursor-not-allowed'
                   : 'text-[var(--text-h)] cursor-pointer hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]'
@@ -1331,31 +964,30 @@ export default function Preview() {
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
+              Download PDF
             </button>
           </div>
         </div>
-        <div className="pb-8">
-          {jsonError ? (
-            <div
-              style={{ width: PAGE_W * (zoom / 100), height: PAGE_H * (zoom / 100), flexShrink: 0 }}
-              className="flex items-center justify-center"
-            >
-              <div className="text-center px-8">
-                <svg className="mx-auto mb-4 opacity-30" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                  <polyline points="10 9 9 9 8 9" />
-                </svg>
-                <p className="text-sm font-medium opacity-50">No Resume to Preview</p>
-                <p className="text-xs opacity-40 mt-1">Paste a valid JSON response to generate your resume</p>
-              </div>
+        {pdfUrl ? (
+          <iframe
+            src={pdfUrl}
+            className="flex-1 w-full border-0"
+            title="Resume PDF Preview"
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center px-8">
+              <svg className="mx-auto mb-4 opacity-30" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+              <p className="text-sm font-medium opacity-50">Generating PDF Preview…</p>
             </div>
-          ) : (
-            <ResumePreview settings={settings} zoom={zoom} data={resumeData} />
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <RightSidebar jsonInput={jsonInput} onJsonChange={setJsonInput} aiPrompt={aiPrompt} jsonError={jsonError} />
