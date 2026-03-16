@@ -931,12 +931,13 @@ export default function Preview() {
   const resumeData = jsonParsed || SAMPLE_DATA
 
   const pdfUrl = useMemo(() => {
+    if (!jsonParsed) return null
     try {
       return generateResumePdfBlobUrl(resumeData, settings)
     } catch {
       return null
     }
-  }, [resumeData, settings])
+  }, [jsonParsed, resumeData, settings])
 
   useEffect(() => {
     return () => {
@@ -1006,7 +1007,7 @@ export default function Preview() {
                 <line x1="16" y1="17" x2="8" y2="17" />
                 <polyline points="10 9 9 9 8 9" />
               </svg>
-              <p className="text-sm font-medium opacity-50">Generating PDF Preview…</p>
+              <p className="text-sm font-medium opacity-50">{jsonError || 'Generating PDF Preview…'}</p>
             </div>
           </div>
         )}
