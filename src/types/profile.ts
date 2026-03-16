@@ -31,6 +31,7 @@ export interface ProfileData {
   website: string
   roleBasedJobTitle: boolean
   seniority: string
+  jobTitle: string
   workExperiences: WorkExperience[]
   educations: Education[]
   certifications: Certification[]
@@ -58,6 +59,7 @@ export const DEFAULT_PROFILE: ProfileData = {
   website: '',
   roleBasedJobTitle: false,
   seniority: '',
+  jobTitle: '',
   workExperiences: [emptyWork()],
   educations: [emptyEdu()],
   certifications: [emptyCert()],

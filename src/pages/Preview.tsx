@@ -177,7 +177,7 @@ function buildResumeData(profile: ProfileData, jsonStr: string): ResumeData | nu
 
     return {
       name: profile.fullName,
-      jobTitle: isRoleBased ? profile.seniority : (parsed.title || ''),
+      jobTitle: isRoleBased ? profile.jobTitle : (parsed.title || ''),
       email: profile.email,
       phone: profile.phone,
       location: profile.location,
@@ -724,7 +724,7 @@ If any rule fails, STOP and return a plain text error message instead of JSON.
 ========================================
 CANDIDATE PROFILE
 ========================================
-Job Title: ${profile.seniority || 'Not specified'}
+Job Title: ${profile.jobTitle || 'Not specified'}
 Work Experience:
 ${workLines || '- No work experience provided'}
 Education:

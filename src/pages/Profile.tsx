@@ -74,7 +74,7 @@ export default function Profile() {
     }
   }, [profile, setProfile])
 
-  const { fullName, email, phone, location, linkedIn, gitHub, website, roleBasedJobTitle, seniority, workExperiences, educations, certifications } = profile
+  const { fullName, email, phone, location, linkedIn, gitHub, website, roleBasedJobTitle, seniority, jobTitle, workExperiences, educations, certifications } = profile
 
   const set = <K extends keyof ProfileData>(key: K, val: ProfileData[K]) =>
     setProfile(prev => ({ ...prev, [key]: val }))
@@ -157,16 +157,30 @@ export default function Profile() {
             <AddButton onClick={() => set('workExperiences', [...workExperiences, emptyWork()])}>+ Add</AddButton>
           </div>
         }>Work Experience</SectionHeading>
-        <div className="mb-4">
-          <label className={labelClass}>{roleBasedJobTitle ? 'Job Title' : 'Seniority Level'}</label>
-          <input
-            type="text"
-            className={inputClass}
-            placeholder={roleBasedJobTitle ? 'Senior Software Engineer' : 'Senior level with over 11 years of experience'}
-            value={seniority}
-            onChange={e => set('seniority', e.target.value)}
-          />
-        </div>
+        {!roleBasedJobTitle && (
+          <div className="mb-4">
+            <label className={labelClass}>Seniority Level</label>
+            <input
+              type="text"
+              className={inputClass}
+              placeholder="Senior level with over 11 years of experience"
+              value={seniority}
+              onChange={e => set('seniority', e.target.value)}
+            />
+          </div>
+        )}
+        {roleBasedJobTitle && (
+          <div className="mb-4">
+            <label className={labelClass}>Job Title</label>
+            <input
+              type="text"
+              className={inputClass}
+              placeholder="Senior Software Engineer"
+              value={jobTitle}
+              onChange={e => set('jobTitle', e.target.value)}
+            />
+          </div>
+        )}
         <div className="space-y-4">
           {workExperiences.map((work, i) => (
             <div key={work.id} className="relative rounded-lg border border-[var(--border)] p-4">
