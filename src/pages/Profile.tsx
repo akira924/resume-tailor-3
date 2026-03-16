@@ -33,7 +33,7 @@ function RemoveButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500/15 text-red-500 hover:bg-red-500/25 flex items-center justify-center text-xs font-bold transition-colors cursor-pointer"
+      className="absolute top-2 right-2 w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-600 hover:opacity-90 transition-colors cursor-pointer p-0 border-0 bg-transparent text-sm leading-none"
       title="Remove"
     >
       ✕
