@@ -913,7 +913,7 @@ export default function Preview() {
     sectionTitle: { ...DEFAULT_SETTINGS.sectionTitle, ...rawSettings.sectionTitle },
   }), [rawSettings])
   const [profile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
-  const [jsonInput, setJsonInput] = useState('')
+  const [jsonInput, setJsonInput] = useLocalStorage('resume-tailor:json-response', '')
 
   const aiPrompt = useMemo(() => {
     if (profile.roleBasedJobTitle) return buildRoleBasedAiPrompt(profile)
