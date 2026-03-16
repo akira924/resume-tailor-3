@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import Home from './pages/Home'
 import Profile from './pages/Profile'
 import Preview from './pages/Preview'
@@ -20,9 +20,9 @@ const PAGE_KEYS = Object.keys(PAGE_LABELS) as Page[]
 function App() {
   const [activePage, setActivePage] = useState<Page>('home')
 
-  const navigate = (page: string) => {
+  const navigate = useCallback((page: string) => {
     if (page in PAGE_LABELS) setActivePage(page as Page)
-  }
+  }, [])
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">

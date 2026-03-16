@@ -1,25 +1,9 @@
 import { useState } from 'react'
 
-export default function Contact() {
-  const inputClass =
-    'w-full px-4 py-2.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] text-sm placeholder:text-[var(--text)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-border)] transition-colors'
+const inputClass =
+  'w-full px-4 py-2.5 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] text-sm placeholder:text-[var(--text)] focus:outline-none focus:border-[var(--accent-border)] focus:ring-1 focus:ring-[var(--accent-border)] transition-colors'
 
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
-  const [submitted, setSubmitted] = useState(false)
-
-  const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm(prev => ({ ...prev, [field]: e.target.value }))
-
-  const canSubmit = form.name.trim() && form.email.trim() && form.message.trim()
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!canSubmit) return
-    setSubmitted(true)
-    setForm({ name: '', email: '', subject: '', message: '' })
-  }
-
-  const contactInfo = [
+const CONTACT_INFO = [
     {
       label: 'Email',
       value: 'hello@resumetailor.app',
@@ -51,14 +35,30 @@ export default function Contact() {
         </svg>
       ),
     },
-  ]
+]
 
-  const faq = [
-    { q: 'Is Resume Tailor free to use?', a: 'Yes. All features are completely free with no hidden fees or subscriptions.' },
-    { q: 'Is my data stored anywhere?', a: 'No. Everything stays in your browser. We don\'t send or store your data on any server.' },
-    { q: 'Can I export my resume as PDF?', a: 'Absolutely. You can download a polished, ATS-friendly PDF with one click.' },
-    { q: 'How does the tailoring work?', a: 'You enter your full profile once, then paste a job description. The app highlights and prioritizes the experience and skills most relevant to that role.' },
-  ]
+const FAQ = [
+  { q: 'Is Resume Tailor free to use?', a: 'Yes. All features are completely free with no hidden fees or subscriptions.' },
+  { q: 'Is my data stored anywhere?', a: 'No. Everything stays in your browser. We don\'t send or store your data on any server.' },
+  { q: 'Can I export my resume as PDF?', a: 'Absolutely. You can download a polished, ATS-friendly PDF with one click.' },
+  { q: 'How does the tailoring work?', a: 'You enter your full profile once, then paste a job description. The app highlights and prioritizes the experience and skills most relevant to that role.' },
+]
+
+export default function Contact() {
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
+  const [submitted, setSubmitted] = useState(false)
+
+  const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm(prev => ({ ...prev, [field]: e.target.value }))
+
+  const canSubmit = form.name.trim() && form.email.trim() && form.message.trim()
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!canSubmit) return
+    setSubmitted(true)
+    setForm({ name: '', email: '', subject: '', message: '' })
+  }
 
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
@@ -127,7 +127,7 @@ export default function Contact() {
         </form>
 
         <div className="space-y-4">
-          {contactInfo.map((item) => (
+          {CONTACT_INFO.map((item) => (
             <div
               key={item.label}
               className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-5 flex items-start gap-4 transition-colors hover:border-[var(--accent-border)]"
@@ -150,7 +150,7 @@ export default function Contact() {
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-[var(--text-h)]">Frequently Asked Questions</h2>
         <div className="space-y-2 max-w-3xl">
-          {faq.map((item, i) => (
+          {FAQ.map((item, i) => (
             <div
               key={i}
               className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] overflow-hidden transition-colors hover:border-[var(--accent-border)]"

@@ -1,7 +1,15 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { type ProfileData, DEFAULT_PROFILE } from '../types/profile'
-import { generateResumePdf, generateResumePdfBlobUrl } from '../utils/generatePdf'
+import {
+  generateResumePdf,
+  generateResumePdfBlobUrl,
+  type PdfResumeData as ResumeData,
+  type PdfExperienceItem as ExperienceItem,
+  type PdfEducationItem as EducationItem,
+  type PdfCertificationItem as CertificationItem,
+  type PdfSkillCategory as SkillCategory,
+} from '../utils/generatePdf'
 import type {
   FontProps,
   PrimarySettings,
@@ -83,48 +91,7 @@ const SAMPLE = {
   ],
 }
 
-// ── Resume Data Types & Helpers ─────────────────────
-
-interface ExperienceItem {
-  company: string
-  role: string
-  period: string
-  location: string
-  bullets: string[]
-}
-
-interface EducationItem {
-  institution: string
-  degree: string
-  period: string
-}
-
-interface CertificationItem {
-  institution: string
-  certification: string
-  date: string
-}
-
-interface SkillCategory {
-  category: string
-  skills: string[]
-}
-
-interface ResumeData {
-  name: string
-  jobTitle: string
-  email: string
-  phone: string
-  location: string
-  linkedIn: string
-  gitHub: string
-  website: string
-  summary: string
-  experience: ExperienceItem[]
-  education: EducationItem[]
-  certifications: CertificationItem[]
-  skills: SkillCategory[]
-}
+// ── Resume Data Helpers ─────────────────────────────
 
 const SAMPLE_DATA: ResumeData = { ...SAMPLE, certifications: [] }
 
@@ -570,10 +537,17 @@ function ClipboardButton({ type, onClick, copied }: {
 
 // ── Right Sidebar ───────────────────────────────────
 
-function buildAiPrompt(profile: ProfileData): string {
+function buildAiPromptText(profile: ProfileData): string {
+  const isRoleBased = profile.roleBasedJobTitle
+
   const workLines = profile.workExperiences
     .filter(w => w.company)
-    .map(w => `- ${w.company}, ${w.period || 'N/A'}, ${w.bulletPoints || '0'} Bullet Points`)
+    .map(w => {
+      const parts = [w.company]
+      if (isRoleBased) parts.push(w.jobTitle || 'N/A')
+      parts.push(w.period || 'N/A', `${w.bulletPoints || '0'} Bullet Points`)
+      return `- ${parts.join(', ')}`
+    })
     .join('\n')
 
   const eduLines = profile.educations
@@ -588,33 +562,26 @@ function buildAiPrompt(profile: ProfileData): string {
 
   const candidateLocation = profile.location || 'Austin, TX'
 
-  return `You are a resume generation engine.
-Your output MUST be exactly ONE valid JSON object inside a single code block.
-Do NOT include explanations, comments, markdown, headers, or text outside the JSON.
-Do NOT generate multiple code blocks.
-Do NOT ask questions.
-If any rule fails, STOP and return a plain text error message instead of JSON.
+  const candidateSection = isRoleBased
+    ? `Job Title: ${profile.jobTitle || 'Not specified'}`
+    : `Seniority Level: ${profile.seniority || 'Not specified'}`
 
-========================================
-CANDIDATE PROFILE
-========================================
-Seniority Level: ${profile.seniority || 'Not specified'}
-Work Experience:
-${workLines || '- No work experience provided'}
-Education:
-${eduLines || '- No education provided'}
-
-========================================
-JOB DESCRIPTION HANDLING RULES
-========================================
-1. If the job requires security clearance, on-site only work, DO NOT generate a resume.
-2. If the job requires a specific location and it does NOT match ${candidateLocation}, DO NOT generate a resume.
-
-========================================
-OUTPUT FORMAT (STRICT)
-========================================
-Return ONE JSON object with the following structure:
-{
+  const outputFormat = isRoleBased
+    ? `{
+  "summary": "",
+  "skills": [
+    { "Category1": ["Skill1", "Skill2", "..."] }
+  ],
+  "experience": [
+    {
+      "sentences": [
+        "Sentence 1",
+        "Sentence 2"
+      ]
+    }
+  ]
+}`
+    : `{
   "title": "",
   "summary": "",
   "skills": [
@@ -629,83 +596,15 @@ Return ONE JSON object with the following structure:
       ]
     }
   ]
-}
+}`
 
-========================================
-CONTENT RULES
-========================================
-SUMMARY
-- 3–4 sentences
-- Professional, ATS-optimized, concise
-- Aligned directly to the job description
-JOB TITLES IN HEADER AND EACH COMPANY
+  const jobTitleRules = isRoleBased
+    ? ''
+    : `JOB TITLES IN HEADER AND EACH COMPANY
 - 2–4 words
 - Common industry titles aligned with the job description
 - Follow a logical career progression
-SKILLS
-- 30–35 total skills
-- Categorized
-- Must include technologies from the job description
-- Only include technologies released before the experience period
-EDUCATION DEGREE RULES:
-Only modify the degree if it is not related to the job description.
-- Each degree should be appropriate for the job description.
-- Each degree should be common in the industry.
-EXPERIENCE – SENTENCE RULES (VERY IMPORTANT)
-- Third-person only without the name, and he or she
-- No bullet symbols
-- Each sentence must be 150–250 characters and contain detailed, technically rich descriptions of your role, specific contributions, and technologies used.
-- Each sentence must end with a period
-- No sentence may be vague or generic
-- Each experience must reference company industry relevance
-SENTENCE COUNT PER COMPANY
-${sentenceCountRules || '- No sentence count rules specified'}
-Each sentence must be placed as a separate string inside the sentences array.
-
-========================================
-FORMATTING RULES
-========================================
-- JSON ONLY
-- ONE code block ONLY
-- No markdown outside JSON
-- No comments
-- No trailing commas
-- Valid JSON syntax
-- ATS-safe language only
-
-========================================
-FINAL VALIDATION
-========================================
-Before responding, verify:
-- All job description technologies are included
-- Sentence length requirements are met
-- Sentence count requirements are met
-- Job titles are aligned to the role
-- Output is valid JSON
-
-========================================
-JOB DESCRIPTION
-========================================
 `
-}
-
-function buildRoleBasedAiPrompt(profile: ProfileData): string {
-  const workLines = profile.workExperiences
-    .filter(w => w.company)
-    .map(w => `- ${w.company}, ${w.jobTitle || 'N/A'}, ${w.period || 'N/A'}, ${w.bulletPoints || '0'} Bullet Points`)
-    .join('\n')
-
-  const eduLines = profile.educations
-    .filter(e => e.degreeMajor)
-    .map(e => `- ${e.degreeMajor}`)
-    .join('\n')
-
-  const sentenceCountRules = profile.workExperiences
-    .filter(w => w.company && w.bulletPoints)
-    .map(w => `- ${w.company}: at least ${w.bulletPoints} sentences`)
-    .join('\n')
-
-  const candidateLocation = profile.location || 'Austin, TX'
 
   return `You are a resume generation engine.
 Your output MUST be exactly ONE valid JSON object inside a single code block.
@@ -717,7 +616,7 @@ If any rule fails, STOP and return a plain text error message instead of JSON.
 ========================================
 CANDIDATE PROFILE
 ========================================
-Job Title: ${profile.jobTitle || 'Not specified'}
+${candidateSection}
 Work Experience:
 ${workLines || '- No work experience provided'}
 Education:
@@ -733,20 +632,7 @@ JOB DESCRIPTION HANDLING RULES
 OUTPUT FORMAT (STRICT)
 ========================================
 Return ONE JSON object with the following structure:
-{
-  "summary": "",
-  "skills": [
-    { "Category1": ["Skill1", "Skill2", "..."] }
-  ],
-  "experience": [
-    {
-      "sentences": [
-        "Sentence 1",
-        "Sentence 2"
-      ]
-    }
-  ]
-}
+${outputFormat}
 
 ========================================
 CONTENT RULES
@@ -755,7 +641,7 @@ SUMMARY
 - 3–4 sentences
 - Professional, ATS-optimized, concise
 - Aligned directly to the job description
-SKILLS
+${jobTitleRules}SKILLS
 - 30–35 total skills
 - Categorized
 - Must include technologies from the job description
@@ -908,10 +794,7 @@ export default function Preview() {
   const [profile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
   const [jsonInput, setJsonInput] = useLocalStorage('resume-tailor:json-response', '')
 
-  const aiPrompt = useMemo(() => {
-    if (profile.roleBasedJobTitle) return buildRoleBasedAiPrompt(profile)
-    return buildAiPrompt(profile)
-  }, [profile])
+  const aiPrompt = useMemo(() => buildAiPromptText(profile), [profile])
 
   const jsonParsed = useMemo(() => buildResumeData(profile, jsonInput), [profile, jsonInput])
 

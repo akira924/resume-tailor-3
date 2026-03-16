@@ -1,5 +1,4 @@
-export default function About() {
-  const stack = [
+const STACK = [
     {
       name: 'React',
       desc: 'Component-based UI library for building interactive interfaces.',
@@ -42,9 +41,9 @@ export default function About() {
         </svg>
       ),
     },
-  ]
+]
 
-  const values = [
+const VALUES = [
     {
       title: 'Privacy First',
       desc: 'Your data stays in your browser. Nothing is sent to external servers.',
@@ -74,14 +73,15 @@ export default function About() {
         </svg>
       ),
     },
-  ]
+]
 
-  const steps = [
-    { num: '01', title: 'Build Your Profile', desc: 'Enter your work experience, education, skills, and certifications.' },
-    { num: '02', title: 'Paste a Job Description', desc: 'Provide the job posting you want to apply for.' },
-    { num: '03', title: 'Get Your Resume', desc: 'Receive a tailored resume emphasizing relevant qualifications.' },
-  ]
+const STEPS = [
+  { num: '01', title: 'Build Your Profile', desc: 'Enter your work experience, education, skills, and certifications.' },
+  { num: '02', title: 'Paste a Job Description', desc: 'Provide the job posting you want to apply for.' },
+  { num: '03', title: 'Get Your Resume', desc: 'Receive a tailored resume emphasizing relevant qualifications.' },
+]
 
+export default function About() {
   return (
     <div className="flex flex-col min-h-full px-8 py-12 pb-20 gap-12">
       <div className="space-y-4 max-w-3xl">
@@ -107,7 +107,7 @@ export default function About() {
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-[var(--text-h)]">Why Resume Tailor</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {values.map((item) => (
+          {VALUES.map((item) => (
             <div
               key={item.title}
               className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3 transition-colors hover:border-[var(--accent-border)]"
@@ -128,7 +128,7 @@ export default function About() {
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-[var(--text-h)]">How It Works</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {steps.map((item, i) => (
+          {STEPS.map((item, i) => (
             <div
               key={item.num}
               className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3 relative"
@@ -149,7 +149,7 @@ export default function About() {
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-[var(--text-h)]">Tech Stack</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stack.map((item) => (
+          {STACK.map((item) => (
             <div
               key={item.name}
               className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-5 space-y-3 transition-colors hover:border-[var(--accent-border)]"
