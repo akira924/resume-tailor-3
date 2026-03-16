@@ -45,12 +45,10 @@ export interface PdfResumeData {
 const PAGE_W = 215.9
 const PAGE_H = 279.4
 
-const SERIF_FONTS = new Set([
-  'Times New Roman', 'Georgia', 'Garamond', 'Merriweather', 'Playfair Display',
-])
+const VALID_FONTS = new Set(['helvetica', 'times', 'courier'])
 
 function pdfFont(family: string): string {
-  return SERIF_FONTS.has(family) ? 'times' : 'helvetica'
+  return VALID_FONTS.has(family) ? family : 'helvetica'
 }
 
 function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {

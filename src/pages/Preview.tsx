@@ -15,20 +15,13 @@ import type {
 // ── Constants ────────────────────────────────────────
 
 const FONT_OPTIONS = [
-  { value: 'Inter', label: 'Inter' },
-  { value: 'Arial', label: 'Arial' },
-  { value: 'Times New Roman', label: 'Times New Roman' },
-  { value: 'Georgia', label: 'Georgia' },
-  { value: 'Garamond', label: 'Garamond' },
-  { value: 'Roboto', label: 'Roboto' },
-  { value: 'Lato', label: 'Lato' },
-  { value: 'Open Sans', label: 'Open Sans' },
-  { value: 'Merriweather', label: 'Merriweather' },
-  { value: 'Playfair Display', label: 'Playfair Display' },
+  { value: 'helvetica', label: 'Helvetica Neue' },
+  { value: 'times', label: 'Times New Roman' },
+  { value: 'courier', label: 'Courier New' },
 ]
 
 const DEFAULT_SETTINGS: ResumeSettings = {
-  primary: { fontFamily: 'Inter', fontSize: 10, fontColor: '#333333' },
+  primary: { fontFamily: 'helvetica', fontSize: 10, fontColor: '#333333' },
   pageLayout: { pageMargin: 0.75, lineSpacing: 1.2, sectionGap: 12 },
   header: {
     name: { fontSize: 24, fontColor: '#111827', bold: true },
