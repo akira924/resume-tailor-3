@@ -63,7 +63,7 @@ export default function Contact() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (
-    <div className="flex flex-col h-full px-8 py-12 gap-10">
+    <div className="flex flex-col min-h-full px-8 py-12 pb-20 gap-10">
       <div className="space-y-3">
         <h1 className="text-4xl font-extrabold tracking-tight text-[var(--text-h)]">
           Get in{' '}

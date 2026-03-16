@@ -83,7 +83,7 @@ export default function About() {
   ]
 
   return (
-    <div className="flex flex-col h-full px-8 py-12 gap-12">
+    <div className="flex flex-col min-h-full px-8 py-12 pb-20 gap-12">
       <div className="space-y-4 max-w-3xl">
         <h1 className="text-4xl font-extrabold tracking-tight text-[var(--text-h)]">
           About{' '}
