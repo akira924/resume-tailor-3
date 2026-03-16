@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf'
+import type { ResumeSettings } from '../types/settings'
 
 export interface PdfExperienceItem {
   company: string
@@ -43,35 +44,55 @@ export interface PdfResumeData {
 
 const PAGE_W = 215.9
 const PAGE_H = 279.4
-const MARGIN = 19.05 // 0.75 inches
 
-const CLR_DARK = '#111827'
-const CLR_MID = '#4b5563'
-const CLR_LIGHT = '#6b7280'
+const SERIF_FONTS = new Set([
+  'Times New Roman', 'Georgia', 'Garamond', 'Merriweather', 'Playfair Display',
+])
 
-export function generateResumePdf(data: PdfResumeData): void {
+function pdfFont(family: string): string {
+  return SERIF_FONTS.has(family) ? 'times' : 'helvetica'
+}
+
+export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings): void {
+  const MARGIN = settings.primary.pageMargin * 25.4
+  const font = pdfFont(settings.primary.fontFamily)
+  const bodySize = settings.primary.fontSize
+  const bodyColor = settings.primary.fontColor
+  const labelSize = bodySize + 1
+  const { header, sectionTitle, experienceLayout } = settings
+
+  const PT_MM = 0.352778
+  const CAP_RATIO = 0.75
+
   const doc = new jsPDF({ unit: 'mm', format: 'letter' })
   const cw = PAGE_W - 2 * MARGIN
-  let y = MARGIN
+  let y = MARGIN + header.name.fontSize * PT_MM * CAP_RATIO
 
   function pageBreak(space: number) {
     if (y + space > PAGE_H - MARGIN) {
       doc.addPage()
-      y = MARGIN
+      y = MARGIN + bodySize * PT_MM * CAP_RATIO
     }
   }
 
-  function sectionHeading(title: string) {
+  function heading(title: string) {
     pageBreak(14)
     y += 5
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(11)
-    doc.setTextColor(CLR_DARK)
-    doc.text(title.toUpperCase(), MARGIN, y)
-    y += 1.5
-    doc.setDrawColor(CLR_DARK)
-    doc.setLineWidth(0.3)
-    doc.line(MARGIN, y, PAGE_W - MARGIN, y)
+    doc.setFont(font, sectionTitle.bold ? 'bold' : 'normal')
+    doc.setFontSize(sectionTitle.fontSize)
+    doc.setTextColor(sectionTitle.fontColor)
+    const text = sectionTitle.capitalize ? title.toUpperCase() : title
+    if (sectionTitle.alignment === 'center') {
+      doc.text(text, PAGE_W / 2, y, { align: 'center' })
+    } else {
+      doc.text(text, MARGIN, y)
+    }
+    if (sectionTitle.borderVisible) {
+      y += 1.5
+      doc.setDrawColor(sectionTitle.fontColor)
+      doc.setLineWidth(0.3)
+      doc.line(MARGIN, y, PAGE_W - MARGIN, y)
+    }
     y += 5
   }
 
@@ -79,11 +100,11 @@ export function generateResumePdf(data: PdfResumeData): void {
     text: string,
     size: number,
     style: 'normal' | 'italic' | 'bold' = 'normal',
-    color: string = CLR_DARK,
+    color: string = bodyColor,
     indent: number = 0,
-    lh: number = 4.2,
+    lh: number = bodySize * 0.42,
   ) {
-    doc.setFont('helvetica', style)
+    doc.setFont(font, style)
     doc.setFontSize(size)
     doc.setTextColor(color)
     const lines: string[] = doc.splitTextToSize(text, cw - indent)
@@ -101,15 +122,15 @@ export function generateResumePdf(data: PdfResumeData): void {
     leftSize: number,
     rightSize: number,
   ) {
-    doc.setFont('helvetica', leftStyle)
+    doc.setFont(font, leftStyle)
     doc.setFontSize(leftSize)
-    doc.setTextColor(CLR_DARK)
+    doc.setTextColor(bodyColor)
 
     const maxLeftW = cw - doc.getStringUnitWidth(right) * rightSize * 0.352778 - 4
     const leftLines: string[] = doc.splitTextToSize(left, maxLeftW)
     doc.text(leftLines[0] || '', MARGIN, y)
 
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(font, 'normal')
     doc.setFontSize(rightSize)
     const rw = doc.getTextWidth(right)
     doc.text(right, PAGE_W - MARGIN - rw, y)
@@ -117,76 +138,175 @@ export function generateResumePdf(data: PdfResumeData): void {
 
   // ── Header ──────────────────────────────────────────
 
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(22)
-  doc.setTextColor(CLR_DARK)
-  doc.text(data.name || 'Your Name', MARGIN, y)
-  y += 7
-
-  if (data.jobTitle) {
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(12)
-    doc.setTextColor(CLR_MID)
-    doc.text(data.jobTitle, MARGIN, y)
-    y += 5.5
-  }
-
   const contactParts = [
-    data.email,
-    data.phone,
-    data.linkedIn,
-    data.gitHub,
-    data.website,
-    data.location,
+    data.email, data.phone, data.linkedIn, data.gitHub, data.website, data.location,
   ].filter(Boolean)
 
-  if (contactParts.length) {
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9)
-    doc.setTextColor(CLR_LIGHT)
-    const contactLine = contactParts.join('  |  ')
-    const lines: string[] = doc.splitTextToSize(contactLine, cw)
-    for (const line of lines) {
-      doc.text(line, MARGIN, y)
-      y += 3.8
+  const nameWeight = header.name.bold ? 'bold' as const : 'normal' as const
+  const titleWeight = header.jobTitle.bold ? 'bold' as const : 'normal' as const
+
+  if (header.alignment === 'hybrid') {
+    const startY = y
+
+    if (header.jobTitlePosition === 'beside' && data.jobTitle) {
+      doc.setFont(font, nameWeight)
+      doc.setFontSize(header.name.fontSize)
+      doc.setTextColor(header.name.fontColor)
+      const nameText = data.name || 'Your Name'
+      doc.text(nameText, MARGIN, y)
+      const nameW = doc.getTextWidth(nameText)
+
+      doc.setFont(font, titleWeight)
+      doc.setFontSize(header.jobTitle.fontSize)
+      doc.setTextColor(header.jobTitle.fontColor)
+      doc.text(data.jobTitle, MARGIN + nameW + 4, y)
+      y += Math.max(header.name.fontSize, header.jobTitle.fontSize) * 0.32
+    } else {
+      doc.setFont(font, nameWeight)
+      doc.setFontSize(header.name.fontSize)
+      doc.setTextColor(header.name.fontColor)
+      doc.text(data.name || 'Your Name', MARGIN, y)
+      y += header.name.fontSize * 0.32
+
+      if (data.jobTitle) {
+        doc.setFont(font, titleWeight)
+        doc.setFontSize(header.jobTitle.fontSize)
+        doc.setTextColor(header.jobTitle.fontColor)
+        doc.text(data.jobTitle, MARGIN, y)
+        y += header.jobTitle.fontSize * 0.46
+      }
     }
-    y += 1
+
+    const leftEndY = y
+
+    if (contactParts.length) {
+      let rightY = startY
+      const contactLH = bodySize * 0.42
+      doc.setFont(font, 'normal')
+      doc.setFontSize(bodySize)
+      doc.setTextColor(header.contactFontColor)
+      for (const part of contactParts) {
+        doc.text(part, PAGE_W - MARGIN, rightY, { align: 'right' })
+        rightY += contactLH
+      }
+      y = Math.max(leftEndY, rightY) + 1
+    }
+  } else {
+    const centered = header.alignment === 'center'
+
+    if (header.jobTitlePosition === 'beside' && data.jobTitle) {
+      const nameText = data.name || 'Your Name'
+
+      doc.setFont(font, nameWeight)
+      doc.setFontSize(header.name.fontSize)
+      const nameW = doc.getTextWidth(nameText)
+
+      doc.setFont(font, titleWeight)
+      doc.setFontSize(header.jobTitle.fontSize)
+      const titleW = doc.getTextWidth(data.jobTitle)
+
+      const gap = 4
+      if (centered) {
+        const startX = (PAGE_W - nameW - gap - titleW) / 2
+
+        doc.setFont(font, nameWeight)
+        doc.setFontSize(header.name.fontSize)
+        doc.setTextColor(header.name.fontColor)
+        doc.text(nameText, startX, y)
+
+        doc.setFont(font, titleWeight)
+        doc.setFontSize(header.jobTitle.fontSize)
+        doc.setTextColor(header.jobTitle.fontColor)
+        doc.text(data.jobTitle, startX + nameW + gap, y)
+      } else {
+        doc.setFont(font, nameWeight)
+        doc.setFontSize(header.name.fontSize)
+        doc.setTextColor(header.name.fontColor)
+        doc.text(nameText, MARGIN, y)
+
+        doc.setFont(font, titleWeight)
+        doc.setFontSize(header.jobTitle.fontSize)
+        doc.setTextColor(header.jobTitle.fontColor)
+        doc.text(data.jobTitle, MARGIN + nameW + gap, y)
+      }
+      y += Math.max(header.name.fontSize, header.jobTitle.fontSize) * 0.32
+    } else {
+      doc.setFont(font, nameWeight)
+      doc.setFontSize(header.name.fontSize)
+      doc.setTextColor(header.name.fontColor)
+      const nameText = data.name || 'Your Name'
+      if (centered) {
+        doc.text(nameText, PAGE_W / 2, y, { align: 'center' })
+      } else {
+        doc.text(nameText, MARGIN, y)
+      }
+      y += header.name.fontSize * 0.32
+
+      if (data.jobTitle) {
+        doc.setFont(font, titleWeight)
+        doc.setFontSize(header.jobTitle.fontSize)
+        doc.setTextColor(header.jobTitle.fontColor)
+        if (centered) {
+          doc.text(data.jobTitle, PAGE_W / 2, y, { align: 'center' })
+        } else {
+          doc.text(data.jobTitle, MARGIN, y)
+        }
+        y += header.jobTitle.fontSize * 0.46
+      }
+    }
+
+    if (contactParts.length) {
+      doc.setFont(font, 'normal')
+      doc.setFontSize(bodySize)
+      doc.setTextColor(header.contactFontColor)
+      const contactLine = contactParts.join('  |  ')
+      const lines: string[] = doc.splitTextToSize(contactLine, cw)
+      for (const line of lines) {
+        if (centered) {
+          doc.text(line, PAGE_W / 2, y, { align: 'center' })
+        } else {
+          doc.text(line, MARGIN, y)
+        }
+        y += bodySize * 0.42
+      }
+      y += 1
+    }
   }
 
   // ── Professional Summary ────────────────────────────
 
   if (data.summary) {
-    sectionHeading('Professional Summary')
-    wrappedText(data.summary, 10)
+    heading('Professional Summary')
+    wrappedText(data.summary, bodySize)
   }
 
   // ── Technical Skills ────────────────────────────────
 
   if (data.skills.length) {
-    sectionHeading('Technical Skills')
+    heading('Technical Skills')
     for (const cat of data.skills) {
       pageBreak(5)
       const catLabel = `${cat.category}: `
       const skillsText = cat.skills.join(', ')
 
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(10)
-      doc.setTextColor(CLR_DARK)
+      doc.setFont(font, 'bold')
+      doc.setFontSize(bodySize)
+      doc.setTextColor(bodyColor)
       const catW = doc.getTextWidth(catLabel)
       doc.text(catLabel, MARGIN, y)
 
-      doc.setFont('helvetica', 'normal')
+      doc.setFont(font, 'normal')
       const firstLineFit = cw - catW
       const skillLines: string[] = doc.splitTextToSize(skillsText, firstLineFit)
 
       doc.text(skillLines[0] || '', MARGIN + catW, y)
-      y += 4.5
+      y += bodySize * 0.45
 
       if (skillLines.length > 1) {
         const drawn = skillLines[0].length
         const rest = skillsText.slice(drawn).trim()
         if (rest) {
-          wrappedText(rest, 10, 'normal', CLR_DARK, 0, 4.2)
+          wrappedText(rest, bodySize, 'normal', bodyColor, 0, bodySize * 0.42)
         }
       }
     }
@@ -195,33 +315,67 @@ export function generateResumePdf(data: PdfResumeData): void {
   // ── Experience ──────────────────────────────────────
 
   if (data.experience.length) {
-    sectionHeading('Experience')
+    heading('Experience')
 
     for (let i = 0; i < data.experience.length; i++) {
       const exp = data.experience[i]
       pageBreak(14)
 
-      twoColumnRow(exp.company, exp.location, 'bold', 10.5, 9.5)
-      y += 4.5
+      const rowLH = labelSize * 0.43
 
-      twoColumnRow(exp.role, exp.period, 'italic', 10, 9.5)
-      y += 4.5
+      switch (experienceLayout) {
+        case 'company-first':
+          twoColumnRow(exp.company, exp.location, 'bold', labelSize, bodySize)
+          y += rowLH
+          twoColumnRow(exp.role, exp.period, 'italic', labelSize, bodySize)
+          y += rowLH
+          break
+
+        case 'role-first':
+          twoColumnRow(exp.role, exp.period, 'bold', labelSize, bodySize)
+          y += rowLH
+          twoColumnRow(exp.company, exp.location, 'italic', labelSize, bodySize)
+          y += rowLH
+          break
+
+        case 'single-row': {
+          doc.setFont(font, 'bold')
+          doc.setFontSize(labelSize)
+          doc.setTextColor(bodyColor)
+          doc.text(exp.company, MARGIN, y)
+          const compW = doc.getTextWidth(exp.company)
+
+          doc.setFont(font, 'normal')
+          const dash = ' \u2013 '
+          doc.text(dash, MARGIN + compW, y)
+          const dashW = doc.getTextWidth(dash)
+          doc.text(exp.role, MARGIN + compW + dashW, y)
+
+          doc.setFontSize(bodySize)
+          const rightText = `${exp.period}  |  ${exp.location}`
+          const rw = doc.getTextWidth(rightText)
+          doc.text(rightText, PAGE_W - MARGIN - rw, y)
+          y += rowLH
+          break
+        }
+      }
 
       for (const bullet of exp.bullets) {
         pageBreak(5)
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(9.5)
-        doc.setTextColor(CLR_DARK)
+        doc.setFont(font, 'normal')
+        doc.setFontSize(bodySize)
+        doc.setTextColor(bodyColor)
 
         const prefix = '\u2022   '
         const prefixW = doc.getTextWidth(prefix)
         doc.text(prefix, MARGIN + 1, y)
 
+        const bulletLH = bodySize * 0.38
         const bLines: string[] = doc.splitTextToSize(bullet, cw - prefixW - 1)
         for (let j = 0; j < bLines.length; j++) {
-          if (j > 0) pageBreak(3.8)
+          if (j > 0) pageBreak(bulletLH)
           doc.text(bLines[j], MARGIN + 1 + prefixW, y)
-          y += 3.8
+          y += bulletLH
         }
         y += 0.5
       }
@@ -233,39 +387,39 @@ export function generateResumePdf(data: PdfResumeData): void {
   // ── Education ───────────────────────────────────────
 
   if (data.education.length) {
-    sectionHeading('Education')
+    heading('Education')
 
     for (const edu of data.education) {
       pageBreak(10)
 
-      twoColumnRow(edu.institution, edu.period, 'bold', 10.5, 9.5)
-      y += 4.5
+      twoColumnRow(edu.institution, edu.period, 'bold', labelSize, bodySize)
+      y += labelSize * 0.43
 
-      doc.setFont('helvetica', 'italic')
-      doc.setFontSize(10)
-      doc.setTextColor(CLR_DARK)
+      doc.setFont(font, 'italic')
+      doc.setFontSize(bodySize)
+      doc.setTextColor(bodyColor)
       doc.text(edu.degree, MARGIN, y)
-      y += 5
+      y += bodySize * 0.5
     }
   }
 
   // ── Certifications ─────────────────────────────────
 
   if (data.certifications.length) {
-    sectionHeading('Certifications')
+    heading('Certifications')
 
     for (const cert of data.certifications) {
       pageBreak(10)
 
-      twoColumnRow(cert.certification, cert.date, 'bold', 10.5, 9.5)
-      y += 4.5
+      twoColumnRow(cert.certification, cert.date, 'bold', labelSize, bodySize)
+      y += labelSize * 0.43
 
       if (cert.institution) {
-        doc.setFont('helvetica', 'italic')
-        doc.setFontSize(10)
-        doc.setTextColor(CLR_DARK)
+        doc.setFont(font, 'italic')
+        doc.setFontSize(bodySize)
+        doc.setTextColor(bodyColor)
         doc.text(cert.institution, MARGIN, y)
-        y += 4.5
+        y += labelSize * 0.43
       }
     }
   }

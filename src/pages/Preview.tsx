@@ -2,47 +2,14 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { type ProfileData, DEFAULT_PROFILE } from '../types/profile'
 import { generateResumePdf } from '../utils/generatePdf'
-
-// ── Types ────────────────────────────────────────────
-
-interface FontProps {
-  fontSize: number
-  fontColor: string
-  bold: boolean
-}
-
-interface PrimarySettings {
-  fontFamily: string
-  fontSize: number
-  fontColor: string
-  pageMargin: number
-}
-
-interface HeaderSettings {
-  name: FontProps
-  jobTitle: FontProps
-  contactFontColor: string
-  alignment: 'left' | 'center' | 'hybrid'
-  jobTitlePosition: 'below' | 'beside'
-}
-
-interface SectionTitleSettings {
-  fontSize: number
-  fontColor: string
-  bold: boolean
-  capitalize: boolean
-  borderVisible: boolean
-  alignment: 'left' | 'center'
-}
-
-type ExperienceLayout = 'single-row' | 'company-first' | 'role-first'
-
-interface ResumeSettings {
-  primary: PrimarySettings
-  header: HeaderSettings
-  sectionTitle: SectionTitleSettings
-  experienceLayout: ExperienceLayout
-}
+import type {
+  FontProps,
+  PrimarySettings,
+  HeaderSettings,
+  SectionTitleSettings,
+  ExperienceLayout,
+  ResumeSettings,
+} from '../types/settings'
 
 // ── Constants ────────────────────────────────────────
 
@@ -62,7 +29,7 @@ const FONT_OPTIONS = [
 ]
 
 const DEFAULT_SETTINGS: ResumeSettings = {
-  primary: { fontFamily: 'Inter', fontSize: 10, fontColor: '#333333', pageMargin: 0.75 },
+  primary: { fontFamily: 'Inter', fontSize: 10, fontColor: '#333333', pageMargin: 0.75, lineSpacing: 1.2, sectionGap: 12 },
   header: {
     name: { fontSize: 24, fontColor: '#111827', bold: true },
     jobTitle: { fontSize: 14, fontColor: '#4b5563', bold: false },
@@ -1256,8 +1223,8 @@ export default function Preview() {
   }, [profile, jsonInput])
 
   const handleDownloadPdf = useCallback(() => {
-    generateResumePdf(resumeData)
-  }, [resumeData])
+    generateResumePdf(resumeData, settings)
+  }, [resumeData, settings])
 
   useEffect(() => {
     if (GOOGLE_FONTS.includes(settings.primary.fontFamily)) {
