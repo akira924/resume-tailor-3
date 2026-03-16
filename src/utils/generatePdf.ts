@@ -58,7 +58,7 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
   const font = pdfFont(settings.primary.fontFamily)
   const bodySize = settings.primary.fontSize
   const bodyColor = settings.primary.fontColor
-  const labelSize = bodySize + 1
+  const labelSize = bodySize
   const PT_MM = 0.352778
   const CAP_RATIO = 0.75
 
