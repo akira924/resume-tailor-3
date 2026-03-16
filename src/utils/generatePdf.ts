@@ -51,6 +51,12 @@ function pdfFont(family: string): string {
   return VALID_FONTS.has(family) ? family : 'helvetica'
 }
 
+type ContactPart = { text: string; url?: string }
+
+function normalizeUrl(raw: string): string {
+  return raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`
+}
+
 function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
   const MARGIN = settings.pageLayout.pageMargin * 25.4
   const font = pdfFont(settings.primary.fontFamily)
@@ -140,9 +146,14 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
 
   // ── Header ──────────────────────────────────────────
 
-  const contactParts = [
-    data.email, data.phone, data.linkedIn, data.gitHub, data.website, data.location,
-  ].filter(Boolean)
+  const contactParts: ContactPart[] = [
+    data.email ? { text: data.email } : null,
+    data.phone ? { text: data.phone } : null,
+    data.linkedIn ? { text: 'LinkedIn', url: normalizeUrl(data.linkedIn) } : null,
+    data.gitHub ? { text: 'GitHub', url: normalizeUrl(data.gitHub) } : null,
+    data.website ? { text: 'Website', url: normalizeUrl(data.website) } : null,
+    data.location ? { text: data.location } : null,
+  ].filter((p): p is ContactPart => p !== null)
 
   const nameWeight = header.name.bold ? 'bold' as const : 'normal' as const
   const titleWeight = header.jobTitle.bold ? 'bold' as const : 'normal' as const
@@ -188,7 +199,12 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
       doc.setFontSize(bodySize)
       doc.setTextColor(header.contactFontColor)
       for (const part of contactParts) {
-        doc.text(part, PAGE_W - MARGIN, rightY, { align: 'right' })
+        const pw = doc.getTextWidth(part.text)
+        if (part.url) {
+          doc.textWithLink(part.text, PAGE_W - MARGIN - pw, rightY, { url: part.url })
+        } else {
+          doc.text(part.text, PAGE_W - MARGIN, rightY, { align: 'right' })
+        }
         rightY += contactLH
       }
       y = Math.max(leftEndY, rightY) + 1
@@ -261,13 +277,43 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
       doc.setFont(font, 'normal')
       doc.setFontSize(bodySize)
       doc.setTextColor(header.contactFontColor)
-      const contactLine = contactParts.join('  |  ')
-      const lines: string[] = doc.splitTextToSize(contactLine, cw)
-      for (const line of lines) {
-        if (centered) {
-          doc.text(line, PAGE_W / 2, y, { align: 'center' })
-        } else {
-          doc.text(line, MARGIN, y)
+
+      const sep = '  |  '
+      const sepW = doc.getTextWidth(sep)
+
+      const partWidths = contactParts.map(p => doc.getTextWidth(p.text))
+      const rows: ContactPart[][] = [[]]
+      let rowW = 0
+      for (let i = 0; i < contactParts.length; i++) {
+        const needed = rowW > 0 ? sepW + partWidths[i] : partWidths[i]
+        if (rowW > 0 && rowW + needed > cw) {
+          rows.push([])
+          rowW = 0
+        }
+        rows[rows.length - 1].push(contactParts[i])
+        rowW += rowW > 0 ? sepW + partWidths[i] : partWidths[i]
+      }
+
+      for (const rowParts of rows) {
+        let totalW = 0
+        for (let i = 0; i < rowParts.length; i++) {
+          totalW += doc.getTextWidth(rowParts[i].text)
+          if (i < rowParts.length - 1) totalW += sepW
+        }
+        let x = centered ? (PAGE_W - totalW) / 2 : MARGIN
+        for (let i = 0; i < rowParts.length; i++) {
+          const part = rowParts[i]
+          const pw = doc.getTextWidth(part.text)
+          if (part.url) {
+            doc.textWithLink(part.text, x, y, { url: part.url })
+          } else {
+            doc.text(part.text, x, y)
+          }
+          x += pw
+          if (i < rowParts.length - 1) {
+            doc.text(sep, x, y)
+            x += sepW
+          }
         }
         y += baseLH
       }
