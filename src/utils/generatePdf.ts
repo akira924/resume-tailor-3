@@ -95,11 +95,12 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
     } else {
       doc.text(text, MARGIN, y)
     }
+    y += sectionTitle.fontSize * PT_MM * 0.4
     if (sectionTitle.borderVisible) {
-      y += 1.5
       doc.setDrawColor(sectionTitle.fontColor)
       doc.setLineWidth(0.3)
       doc.line(MARGIN, y, PAGE_W - MARGIN, y)
+      y += sectionTitle.fontSize * PT_MM * 0.2
     }
     y += sectionGap
   }
@@ -142,6 +143,16 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
     doc.setFontSize(rightSize)
     const rw = doc.getTextWidth(right)
     doc.text(right, PAGE_W - MARGIN - rw, y)
+
+    const lh = leftSize * PT_MM * lineSpacing
+    for (let i = 1; i < leftLines.length; i++) {
+      y += lh
+      pageBreak(lh)
+      doc.setFont(font, leftStyle)
+      doc.setFontSize(leftSize)
+      doc.setTextColor(bodyColor)
+      doc.text(leftLines[i], MARGIN, y)
+    }
   }
 
   // ── Header ──────────────────────────────────────────
@@ -344,18 +355,16 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
       doc.text(catLabel, MARGIN, y)
 
       doc.setFont(font, 'normal')
-      const firstLineFit = cw - catW
-      const skillLines: string[] = doc.splitTextToSize(skillsText, firstLineFit)
+      const skillColW = cw - catW
+      const skillLines: string[] = doc.splitTextToSize(skillsText, skillColW)
 
       doc.text(skillLines[0] || '', MARGIN + catW, y)
       y += baseLH
 
-      if (skillLines.length > 1) {
-        const drawn = skillLines[0].length
-        const rest = skillsText.slice(drawn).trim()
-        if (rest) {
-          wrappedText(rest, bodySize)
-        }
+      for (let j = 1; j < skillLines.length; j++) {
+        pageBreak(baseLH)
+        doc.text(skillLines[j], MARGIN + catW, y)
+        y += baseLH
       }
     }
   }
@@ -387,21 +396,44 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
           break
 
         case 'single-row': {
+          const dash = ' \u2013 '
+          const rightText = `${exp.period}  |  ${exp.location}`
+
+          doc.setFont(font, 'normal')
+          doc.setFontSize(bodySize)
+          doc.setTextColor(bodyColor)
+          const rw = doc.getTextWidth(rightText)
+
+          doc.setFont(font, 'bold')
+          doc.setFontSize(labelSize)
+          const compW = doc.getTextWidth(exp.company)
+          const dashW = doc.getTextWidth(dash)
+
+          doc.setFont(font, 'normal')
+          doc.setFontSize(labelSize)
+          const roleW = doc.getTextWidth(exp.role)
+
+          const leftTotalW = compW + dashW + roleW
+          const maxLeftW = cw - rw - 4
+          const scale = leftTotalW > maxLeftW ? maxLeftW / leftTotalW : 1
+
           doc.setFont(font, 'bold')
           doc.setFontSize(labelSize)
           doc.setTextColor(bodyColor)
-          doc.text(exp.company, MARGIN, y)
-          const compW = doc.getTextWidth(exp.company)
+          const drawCompany = scale < 1
+            ? doc.splitTextToSize(exp.company, compW * scale)[0] || ''
+            : exp.company
+          doc.text(drawCompany, MARGIN, y)
+          const drawnCompW = doc.getTextWidth(drawCompany)
 
           doc.setFont(font, 'normal')
-          const dash = ' \u2013 '
-          doc.text(dash, MARGIN + compW, y)
-          const dashW = doc.getTextWidth(dash)
-          doc.text(exp.role, MARGIN + compW + dashW, y)
+          doc.text(dash, MARGIN + drawnCompW, y)
+          const drawRole = scale < 1
+            ? doc.splitTextToSize(exp.role, roleW * scale)[0] || ''
+            : exp.role
+          doc.text(drawRole, MARGIN + drawnCompW + dashW, y)
 
           doc.setFontSize(bodySize)
-          const rightText = `${exp.period}  |  ${exp.location}`
-          const rw = doc.getTextWidth(rightText)
           doc.text(rightText, PAGE_W - MARGIN - rw, y)
           y += rowLH
           break

@@ -109,8 +109,11 @@ function buildResumeData(profile: ProfileData, jsonStr: string): ResumeData | nu
     const isRoleBased = profile.roleBasedJobTitle
 
     const skills: SkillCategory[] = Array.isArray(parsed.skills)
-      ? parsed.skills.flatMap((cat: Record<string, string[]>) =>
-          Object.entries(cat).map(([category, items]) => ({ category, skills: items }))
+      ? parsed.skills.flatMap((cat: Record<string, unknown>) =>
+          Object.entries(cat).map(([category, items]) => ({
+            category,
+            skills: Array.isArray(items) ? items.map(String) : [String(items)],
+          }))
         )
       : []
 
