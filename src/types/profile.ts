@@ -1,4 +1,5 @@
 export interface WorkExperience {
+  id: string
   company: string
   jobTitle: string
   period: string
@@ -7,12 +8,14 @@ export interface WorkExperience {
 }
 
 export interface Education {
+  id: string
   institution: string
   degreeMajor: string
   period: string
 }
 
 export interface Certification {
+  id: string
   institution: string
   certification: string
   date: string
@@ -33,9 +36,17 @@ export interface ProfileData {
   certifications: Certification[]
 }
 
-export const emptyWork: WorkExperience = { company: '', jobTitle: '', period: '', location: '', bulletPoints: '' }
-export const emptyEdu: Education = { institution: '', degreeMajor: '', period: '' }
-export const emptyCert: Certification = { institution: '', certification: '', date: '' }
+export function uid(): string {
+  return crypto.randomUUID()
+}
+
+export const emptyWork = (): WorkExperience => ({ id: uid(), company: '', jobTitle: '', period: '', location: '', bulletPoints: '' })
+export const emptyEdu = (): Education => ({ id: uid(), institution: '', degreeMajor: '', period: '' })
+export const emptyCert = (): Certification => ({ id: uid(), institution: '', certification: '', date: '' })
+
+export function migrateIds<T extends { id?: string }>(items: T[]): (T & { id: string })[] {
+  return items.map(item => item.id ? item as T & { id: string } : { ...item, id: uid() })
+}
 
 export const DEFAULT_PROFILE: ProfileData = {
   fullName: '',
@@ -47,7 +58,7 @@ export const DEFAULT_PROFILE: ProfileData = {
   website: '',
   roleBasedJobTitle: false,
   seniority: '',
-  workExperiences: [{ ...emptyWork }],
-  educations: [{ ...emptyEdu }],
-  certifications: [{ ...emptyCert }],
+  workExperiences: [emptyWork()],
+  educations: [emptyEdu()],
+  certifications: [emptyCert()],
 }

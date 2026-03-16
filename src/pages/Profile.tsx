@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import {
   type WorkExperience,
@@ -7,6 +8,7 @@ import {
   emptyWork,
   emptyEdu,
   emptyCert,
+  migrateIds,
   DEFAULT_PROFILE,
 } from '../types/profile'
 
@@ -53,6 +55,24 @@ function AddButton({ onClick, children }: { onClick: () => void; children: React
 
 export default function Profile() {
   const [profile, setProfile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
+  const migrated = useRef(false)
+
+  useEffect(() => {
+    if (migrated.current) return
+    migrated.current = true
+    const needsMigration =
+      profile.workExperiences.some(w => !w.id) ||
+      profile.educations.some(e => !e.id) ||
+      profile.certifications.some(c => !c.id)
+    if (needsMigration) {
+      setProfile(prev => ({
+        ...prev,
+        workExperiences: migrateIds(prev.workExperiences),
+        educations: migrateIds(prev.educations),
+        certifications: migrateIds(prev.certifications),
+      }))
+    }
+  }, [profile, setProfile])
 
   const { fullName, email, phone, location, linkedIn, gitHub, website, roleBasedJobTitle, seniority, workExperiences, educations, certifications } = profile
 
@@ -134,7 +154,7 @@ export default function Profile() {
                 />
               </button>
             </label>
-            <AddButton onClick={() => set('workExperiences', [...workExperiences, { ...emptyWork }])}>+ Add</AddButton>
+            <AddButton onClick={() => set('workExperiences', [...workExperiences, emptyWork()])}>+ Add</AddButton>
           </div>
         }>Work Experience</SectionHeading>
         <div className="mb-4">
@@ -149,7 +169,7 @@ export default function Profile() {
         </div>
         <div className="space-y-4">
           {workExperiences.map((work, i) => (
-            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+            <div key={work.id} className="relative rounded-lg border border-[var(--border)] p-4">
               {workExperiences.length > 1 && <RemoveButton onClick={() => set('workExperiences', workExperiences.filter((_, j) => j !== i))} />}
               <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${roleBasedJobTitle ? 'lg:grid-cols-[3fr_3fr_2fr_2fr_1fr]' : 'lg:grid-cols-[3fr_2fr_2fr_1fr]'}`}>
                 <div>
@@ -181,10 +201,10 @@ export default function Profile() {
       </section>
 
       <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading action={<AddButton onClick={() => set('educations', [...educations, { ...emptyEdu }])}>+ Add</AddButton>}>Education</SectionHeading>
+        <SectionHeading action={<AddButton onClick={() => set('educations', [...educations, emptyEdu()])}>+ Add</AddButton>}>Education</SectionHeading>
         <div className="space-y-4">
           {educations.map((edu, i) => (
-            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+            <div key={edu.id} className="relative rounded-lg border border-[var(--border)] p-4">
               {educations.length > 1 && <RemoveButton onClick={() => set('educations', educations.filter((_, j) => j !== i))} />}
               <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr] gap-3">
                 <div>
@@ -206,10 +226,10 @@ export default function Profile() {
       </section>
 
       <section className="rounded-[var(--radius)] border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <SectionHeading action={<AddButton onClick={() => set('certifications', [...certifications, { ...emptyCert }])}>+ Add</AddButton>}>Certifications</SectionHeading>
+        <SectionHeading action={<AddButton onClick={() => set('certifications', [...certifications, emptyCert()])}>+ Add</AddButton>}>Certifications</SectionHeading>
         <div className="space-y-4">
           {certifications.map((cert, i) => (
-            <div key={i} className="relative rounded-lg border border-[var(--border)] p-4">
+            <div key={cert.id} className="relative rounded-lg border border-[var(--border)] p-4">
               {certifications.length > 1 && <RemoveButton onClick={() => set('certifications', certifications.filter((_, j) => j !== i))} />}
               <div className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_1fr] gap-3">
                 <div>

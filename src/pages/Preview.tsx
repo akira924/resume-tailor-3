@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useLocalStorage } from '../hooks/useLocalStorage'
 import { type ProfileData, DEFAULT_PROFILE } from '../types/profile'
 import { generateResumePdf, generateResumePdfBlobUrl } from '../utils/generatePdf'
@@ -276,7 +276,10 @@ function NumInput({ value, onChange, min, max, step, className = 'w-16' }: {
     <input
       type="number"
       value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
+      onChange={(e) => {
+        const n = Number(e.target.value)
+        if (!Number.isNaN(n)) onChange(n)
+      }}
       min={min} max={max} step={step}
       className={`${className} px-2 py-1 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text-h)] text-xs text-right focus:outline-none focus:border-[var(--accent-border)] transition-colors`}
     />
@@ -475,8 +478,8 @@ function LayoutDiagram({ rows, active }: {
 }) {
   return (
     <div className={`space-y-1 p-2 rounded-md ${active ? '' : 'opacity-50'}`}>
-      {rows.map((row, i) => (
-        <div key={i} className="flex items-center justify-between gap-2">
+      {rows.map((row) => (
+        <div key={row.left} className="flex items-center justify-between gap-2">
           <span className="px-1.5 py-0.5 text-[8px] rounded bg-[var(--accent-bg)] text-[var(--accent)] font-medium leading-none">
             {row.left}
           </span>
@@ -811,12 +814,22 @@ function RightSidebar({ jsonInput, onJsonChange, aiPrompt, jsonError }: {
 }) {
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [pastedJson, setPastedJson] = useState(false)
+  const copyTimer = useRef<ReturnType<typeof setTimeout>>(null)
+  const pasteTimer = useRef<ReturnType<typeof setTimeout>>(null)
+
+  useEffect(() => {
+    return () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current)
+      if (pasteTimer.current) clearTimeout(pasteTimer.current)
+    }
+  }, [])
 
   const handleCopyPrompt = async () => {
     try {
       await navigator.clipboard.writeText(aiPrompt)
       setCopiedPrompt(true)
-      setTimeout(() => setCopiedPrompt(false), 2000)
+      if (copyTimer.current) clearTimeout(copyTimer.current)
+      copyTimer.current = setTimeout(() => setCopiedPrompt(false), 2000)
     } catch { /* clipboard not available */ }
   }
 
@@ -825,7 +838,8 @@ function RightSidebar({ jsonInput, onJsonChange, aiPrompt, jsonError }: {
       const text = await navigator.clipboard.readText()
       onJsonChange(text)
       setPastedJson(true)
-      setTimeout(() => setPastedJson(false), 2000)
+      if (pasteTimer.current) clearTimeout(pasteTimer.current)
+      pasteTimer.current = setTimeout(() => setPastedJson(false), 2000)
     } catch { /* clipboard not available */ }
   }
 
@@ -889,9 +903,6 @@ export default function Preview() {
     pageLayout: {
       ...DEFAULT_SETTINGS.pageLayout,
       ...rawSettings.pageLayout,
-      pageMargin: rawSettings.pageLayout?.pageMargin
-        ?? (rawSettings.primary as unknown as Record<string, unknown>)?.pageMargin as number
-        ?? DEFAULT_SETTINGS.pageLayout.pageMargin,
     },
     header: {
       ...DEFAULT_SETTINGS.header,
@@ -903,7 +914,6 @@ export default function Preview() {
   }), [rawSettings])
   const [profile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
   const [jsonInput, setJsonInput] = useState('')
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
 
   const aiPrompt = useMemo(() => {
     if (profile.roleBasedJobTitle) return buildRoleBasedAiPrompt(profile)
@@ -920,14 +930,26 @@ export default function Preview() {
 
   const resumeData = jsonParsed || SAMPLE_DATA
 
-  useEffect(() => {
-    const url = generateResumePdfBlobUrl(resumeData, settings)
-    setPdfUrl(url)
-    return () => URL.revokeObjectURL(url)
+  const pdfUrl = useMemo(() => {
+    try {
+      return generateResumePdfBlobUrl(resumeData, settings)
+    } catch {
+      return null
+    }
   }, [resumeData, settings])
 
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl)
+    }
+  }, [pdfUrl])
+
   const handleDownloadPdf = useCallback(() => {
-    generateResumePdf(resumeData, settings)
+    try {
+      generateResumePdf(resumeData, settings)
+    } catch {
+      /* PDF generation failed — settings or data may be invalid */
+    }
   }, [resumeData, settings])
 
   return (

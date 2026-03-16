@@ -1,4 +1,4 @@
-export default function Home() {
+export default function Home({ onNavigate }: { onNavigate?: (page: string) => void }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 flex items-center px-8 py-12">
@@ -22,15 +22,19 @@ export default function Home() {
               each employer is looking for.
             </p>
             <div className="flex gap-3 pt-2">
-              <span
-                className="inline-block px-6 py-2.5 rounded-lg text-sm font-semibold text-white cursor-default"
+              <button
+                onClick={() => onNavigate?.('profile')}
+                className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
                 style={{ backgroundImage: 'var(--accent-gradient)' }}
               >
                 Get Started
-              </span>
-              <span className="inline-block px-6 py-2.5 rounded-lg text-sm font-semibold border border-[var(--border)] text-[var(--text-h)] cursor-default hover:bg-[var(--accent-bg)] transition-colors">
+              </button>
+              <button
+                onClick={() => onNavigate?.('about')}
+                className="px-6 py-2.5 rounded-lg text-sm font-semibold border border-[var(--border)] text-[var(--text-h)] cursor-pointer hover:bg-[var(--accent-bg)] transition-colors"
+              >
                 Learn More
-              </span>
+              </button>
             </div>
           </div>
 

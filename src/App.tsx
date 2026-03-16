@@ -7,17 +7,22 @@ import Contact from './pages/Contact'
 
 type Page = 'home' | 'profile' | 'preview' | 'about' | 'contact'
 
-const pages: Record<Page, { label: string; component: React.FC }> = {
-  home: { label: 'Home', component: Home },
-  profile: { label: 'Profile', component: Profile },
-  preview: { label: 'Preview', component: Preview },
-  about: { label: 'About', component: About },
-  contact: { label: 'Contact', component: Contact },
+const PAGE_LABELS: Record<Page, string> = {
+  home: 'Home',
+  profile: 'Profile',
+  preview: 'Preview',
+  about: 'About',
+  contact: 'Contact',
 }
+
+const PAGE_KEYS = Object.keys(PAGE_LABELS) as Page[]
 
 function App() {
   const [activePage, setActivePage] = useState<Page>('home')
-  const ActiveComponent = pages[activePage].component
+
+  const navigate = (page: string) => {
+    if (page in PAGE_LABELS) setActivePage(page as Page)
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -30,7 +35,7 @@ function App() {
             Resume Tailor
           </div>
           <div className="flex items-center gap-1">
-            {(Object.keys(pages) as Page[]).map((key) => (
+            {PAGE_KEYS.map((key) => (
               <button
                 key={key}
                 onClick={() => setActivePage(key)}
@@ -41,7 +46,7 @@ function App() {
                 }`}
                 style={activePage === key ? { backgroundImage: 'var(--accent-gradient)' } : undefined}
               >
-                {pages[key].label}
+                {PAGE_LABELS[key]}
               </button>
             ))}
           </div>
@@ -49,7 +54,11 @@ function App() {
       </header>
 
       <main className="flex-1 min-h-0 overflow-auto">
-        <ActiveComponent />
+        {activePage === 'home' && <Home onNavigate={navigate} />}
+        {activePage === 'profile' && <Profile />}
+        {activePage === 'preview' && <Preview />}
+        {activePage === 'about' && <About />}
+        {activePage === 'contact' && <Contact />}
       </main>
 
       <footer className="shrink-0 border-t border-[var(--border)] bg-[var(--footer-bg)] px-8 py-3 flex items-center justify-between text-xs text-[var(--text)]">
