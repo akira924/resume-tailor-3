@@ -1140,8 +1140,8 @@ JOB DESCRIPTION
 `
 }
 
-function RightSidebar({ jsonInput, onJsonChange, aiPrompt }: {
-  jsonInput: string; onJsonChange: (v: string) => void; aiPrompt: string
+function RightSidebar({ jsonInput, onJsonChange, aiPrompt, jsonError }: {
+  jsonInput: string; onJsonChange: (v: string) => void; aiPrompt: string; jsonError: string | null
 }) {
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [pastedJson, setPastedJson] = useState(false)
@@ -1196,8 +1196,15 @@ function RightSidebar({ jsonInput, onJsonChange, aiPrompt }: {
               value={jsonInput}
               onChange={(e) => onJsonChange(e.target.value)}
               placeholder={'{\n  "title": "Software Engineer",\n  "summary": "...",\n  "skills": [{ "Category": ["Skill1"] }],\n  "experience": [{ "title": "...", "sentences": ["..."] }]\n}'}
-              className="w-full h-64 mt-3 px-3 py-2.5 rounded-md border border-[var(--border)] bg-[var(--bg)] text-[var(--text-h)] text-xs leading-relaxed resize-none focus:outline-none focus:border-[var(--accent-border)] transition-colors font-mono"
+              className={`w-full h-64 mt-3 px-3 py-2.5 rounded-md border bg-[var(--bg)] text-[var(--text-h)] text-xs leading-relaxed resize-none focus:outline-none transition-colors font-mono ${
+                jsonError && jsonInput.trim()
+                  ? 'border-red-400 focus:border-red-400'
+                  : 'border-[var(--border)] focus:border-[var(--accent-border)]'
+              }`}
             />
+            {jsonError && (
+              <p className="mt-1.5 text-[11px] text-red-500">{jsonError}</p>
+            )}
           </div>
         </div>
       </div>
@@ -1218,9 +1225,15 @@ export default function Preview() {
     return buildAiPrompt(profile)
   }, [profile])
 
-  const resumeData = useMemo<ResumeData>(() => {
-    return buildResumeData(profile, jsonInput) || SAMPLE_DATA
-  }, [profile, jsonInput])
+  const jsonParsed = useMemo(() => buildResumeData(profile, jsonInput), [profile, jsonInput])
+
+  const jsonError = useMemo(() => {
+    if (!jsonInput.trim()) return 'Paste a JSON response to preview your resume'
+    if (!jsonParsed) return 'Invalid JSON — unable to parse response'
+    return null
+  }, [jsonInput, jsonParsed])
+
+  const resumeData = jsonParsed || SAMPLE_DATA
 
   const handleDownloadPdf = useCallback(() => {
     generateResumePdf(resumeData, settings)
@@ -1263,8 +1276,13 @@ export default function Preview() {
             <div className="w-px h-5 bg-[var(--border)]" />
             <button
               onClick={handleDownloadPdf}
-              className="w-7 h-7 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-h)] cursor-pointer hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors flex items-center justify-center"
-              title="Download PDF"
+              disabled={!!jsonError}
+              className={`w-7 h-7 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] transition-colors flex items-center justify-center ${
+                jsonError
+                  ? 'text-[var(--text)] opacity-40 cursor-not-allowed'
+                  : 'text-[var(--text-h)] cursor-pointer hover:bg-[var(--accent-bg)] hover:text-[var(--accent)]'
+              }`}
+              title={jsonError ? 'Valid JSON response required' : 'Download PDF'}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -1275,11 +1293,30 @@ export default function Preview() {
           </div>
         </div>
         <div className="pb-8">
-          <ResumePreview settings={settings} zoom={zoom} data={resumeData} />
+          {jsonError ? (
+            <div
+              style={{ width: PAGE_W * (zoom / 100), height: PAGE_H * (zoom / 100), flexShrink: 0 }}
+              className="flex items-center justify-center"
+            >
+              <div className="text-center px-8">
+                <svg className="mx-auto mb-4 opacity-30" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+                <p className="text-sm font-medium opacity-50">No Resume to Preview</p>
+                <p className="text-xs opacity-40 mt-1">Paste a valid JSON response to generate your resume</p>
+              </div>
+            </div>
+          ) : (
+            <ResumePreview settings={settings} zoom={zoom} data={resumeData} />
+          )}
         </div>
       </div>
 
-      <RightSidebar jsonInput={jsonInput} onJsonChange={setJsonInput} aiPrompt={aiPrompt} />
+      <RightSidebar jsonInput={jsonInput} onJsonChange={setJsonInput} aiPrompt={aiPrompt} jsonError={jsonError} />
     </div>
   )
 }
