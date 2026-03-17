@@ -191,20 +191,20 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
       doc.setFontSize(header.jobTitle.fontSize)
       doc.setTextColor(header.jobTitle.fontColor)
       doc.text(data.jobTitle, MARGIN + nameW + 4, y)
-      y += Math.max(header.name.fontSize, header.jobTitle.fontSize) * 0.32
+      y += Math.max(header.name.fontSize, header.jobTitle.fontSize) * PT_MM * lineSpacing
     } else {
       doc.setFont(font, nameWeight)
       doc.setFontSize(header.name.fontSize)
       doc.setTextColor(header.name.fontColor)
       doc.text(data.name || 'Your Name', MARGIN, y)
-      y += header.name.fontSize * 0.32
+      y += header.name.fontSize * PT_MM * lineSpacing
 
       if (data.jobTitle) {
         doc.setFont(font, titleWeight)
         doc.setFontSize(header.jobTitle.fontSize)
         doc.setTextColor(header.jobTitle.fontColor)
         doc.text(data.jobTitle, MARGIN, y)
-        y += header.jobTitle.fontSize * 0.46
+        y += header.jobTitle.fontSize * PT_MM * lineSpacing
       }
     }
 
@@ -265,7 +265,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
         doc.setTextColor(header.jobTitle.fontColor)
         doc.text(data.jobTitle, MARGIN + nameW + gap, y)
       }
-      y += Math.max(header.name.fontSize, header.jobTitle.fontSize) * 0.32
+      y += Math.max(header.name.fontSize, header.jobTitle.fontSize) * PT_MM * lineSpacing
     } else {
       doc.setFont(font, nameWeight)
       doc.setFontSize(header.name.fontSize)
@@ -276,7 +276,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
       } else {
         doc.text(nameText, MARGIN, y)
       }
-      y += header.name.fontSize * 0.32
+      y += header.name.fontSize * PT_MM * lineSpacing
 
       if (data.jobTitle) {
         doc.setFont(font, titleWeight)
@@ -287,7 +287,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
         } else {
           doc.text(data.jobTitle, MARGIN, y)
         }
-        y += header.jobTitle.fontSize * 0.46
+        y += header.jobTitle.fontSize * PT_MM * lineSpacing
       }
     }
 
