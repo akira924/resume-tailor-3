@@ -199,7 +199,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
       doc.setFontSize(header.name.fontSize)
       doc.setTextColor(header.name.fontColor)
       doc.text(data.name || 'Your Name', MARGIN, y)
-      y += header.name.fontSize * PT_MM * lineSpacing
+      y += header.name.fontSize * PT_MM
 
       if (data.jobTitle) {
         doc.setFont(font, titleWeight)
@@ -278,7 +278,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
       } else {
         doc.text(nameText, MARGIN, y)
       }
-      y += header.name.fontSize * PT_MM * lineSpacing
+      y += header.name.fontSize * PT_MM
 
       if (data.jobTitle) {
         doc.setFont(font, titleWeight)
