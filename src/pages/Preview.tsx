@@ -805,7 +805,7 @@ export default function Preview() {
     },
     sectionTitle: { ...DEFAULT_SETTINGS.sectionTitle, ...rawSettings.sectionTitle },
   }), [rawSettings])
-  const [profile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
+  const [profile, setProfile] = useLocalStorage<ProfileData>('resume-tailor:profile', DEFAULT_PROFILE)
   const [jsonInput, setJsonInput] = useLocalStorage('resume-tailor:json-response', '')
 
   const aiPrompt = useMemo(() => buildAiPromptText(profile), [profile])
@@ -864,6 +864,40 @@ export default function Preview() {
     }
   }, [resumeData, settings])
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleExportFile = useCallback(() => {
+    const payload = {
+      version: 1,
+      profile,
+      settings,
+      jsonResponse: jsonInput,
+    }
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `resume-tailor-${profile.fullName ? profile.fullName.replace(/\s+/g, '-').toLowerCase() : 'export'}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [profile, settings, jsonInput])
+
+  const handleImportFile = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result as string)
+        if (data.profile) setProfile(data.profile)
+        if (data.settings) setSettings(data.settings)
+        if (typeof data.jsonResponse === 'string') setJsonInput(data.jsonResponse)
+      } catch { /* invalid file */ }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }, [setProfile, setSettings, setJsonInput])
+
   return (
     <div className="flex h-full min-h-0">
       <div className="w-96 shrink-0 border-r border-[var(--border)] overflow-y-auto" data-no-print>
@@ -900,6 +934,41 @@ export default function Preview() {
               </svg>
               Download PDF
             </button>
+
+            <button
+              onClick={handleExportFile}
+              className="h-7 px-3 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-xs font-medium text-[var(--text-h)] cursor-pointer hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors flex items-center gap-1.5"
+              title="Export profile and settings as file"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="18" x2="12" y2="12" />
+                <polyline points="9 15 12 12 15 15" />
+              </svg>
+              Export File
+            </button>
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="h-7 px-3 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-xs font-medium text-[var(--text-h)] cursor-pointer hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors flex items-center gap-1.5"
+              title="Import profile and settings from file"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="12" y1="12" x2="12" y2="18" />
+                <polyline points="9 15 12 18 15 15" />
+              </svg>
+              Import File
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
           </div>
         </div>
         {pdfUrl ? (
