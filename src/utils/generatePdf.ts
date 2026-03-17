@@ -370,7 +370,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
 
       for (let j = 1; j < skillLines.length; j++) {
         pageBreak(baseLH)
-        doc.text(skillLines[j], MARGIN + catW, y)
+        doc.text(skillLines[j], MARGIN, y)
         y += baseLH
       }
     }
