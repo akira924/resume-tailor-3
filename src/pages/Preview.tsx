@@ -133,7 +133,11 @@ function buildResumeData(profile: ProfileData, jsonStr: string): ResumeData | nu
 
     const education: EducationItem[] = profile.educations
       .filter(e => e.institution || e.degreeMajor)
-      .map(e => ({ institution: e.institution, degree: e.degreeMajor, period: e.period }))
+      .map((e, i) => ({
+        institution: e.institution,
+        degree: parsed.education?.[i]?.degree || e.degreeMajor,
+        period: e.period,
+      }))
 
     const certifications: CertificationItem[] = profile.certifications
       .filter(c => c.certification || c.institution)
@@ -583,6 +587,9 @@ function buildAiPromptText(profile: ProfileData): string {
         "Sentence 2"
       ]
     }
+  ],
+  "education": [
+    { "degree": "Degree and Major" }
   ]
 }`
     : `{
@@ -599,6 +606,9 @@ function buildAiPromptText(profile: ProfileData): string {
         "Sentence 2"
       ]
     }
+  ],
+  "education": [
+    { "degree": "Degree and Major" }
   ]
 }`
 
