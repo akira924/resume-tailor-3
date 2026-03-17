@@ -665,7 +665,7 @@ Only modify the degree if it is not related to the job description.
 - Each degree should be appropriate for the job description.
 - Each degree should be common in the industry.
 EXPERIENCE – SENTENCE RULES (VERY IMPORTANT)
-- Third-person only without the name, and he or she
+- DO NOT include the name or pronouns such as he or she
 - No bullet symbols
 - Each sentence must be 150–250 characters and contain detailed, technically rich descriptions of your role, specific contributions, and technologies used.
 - Each sentence must end with a period
@@ -693,6 +693,7 @@ Before responding, verify:
 - All job description technologies are included
 - Sentence length requirements are met
 - Sentence count requirements are met
+- Sentence DO NOT include the name or pronouns such as he or she
 - Job titles are aligned to the role
 - Output is valid JSON
 
