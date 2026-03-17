@@ -789,6 +789,7 @@ function RightSidebar({ jsonInput, onJsonChange, aiPrompt, jsonError }: {
 // ── Main Component ───────────────────────────────────
 
 export default function Preview() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [rawSettings, setSettings] = useLocalStorage<ResumeSettings>('resume-tailor:settings', DEFAULT_SETTINGS)
   const settings = useMemo<ResumeSettings>(() => ({
     ...DEFAULT_SETTINGS,
@@ -901,9 +902,32 @@ export default function Preview() {
 
   return (
     <div className="flex h-full min-h-0">
-      <div className="w-96 shrink-0 border-r border-[var(--border)] overflow-y-auto" data-no-print>
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-40 xl:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-80 sm:w-96 bg-[var(--bg-surface)] border-r border-[var(--border)] overflow-y-auto transition-transform duration-300 ease-in-out xl:static xl:translate-x-0 xl:shrink-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        data-no-print
+      >
         <div className="p-5 space-y-4">
-          <h1 className="text-xl font-bold text-[var(--text-h)] tracking-tight">Customize Resume</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-[var(--text-h)] tracking-tight">Customize Resume</h1>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="xl:hidden p-1.5 rounded-md text-[var(--text)] hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
           <PrimarySection value={settings.primary} onChange={(v) => setSettings((s) => ({ ...s, primary: v }))} />
           <PageLayoutSection value={settings.pageLayout} onChange={(v) => setSettings((s) => ({ ...s, pageLayout: v }))} />
           <HeaderSection value={settings.header} onChange={(v) => setSettings((s) => ({ ...s, header: v }))} />
@@ -918,6 +942,17 @@ export default function Preview() {
       >
         <div className="shrink-0 z-10 w-full flex justify-center py-3 backdrop-blur-sm" data-no-print style={{ backgroundColor: 'color-mix(in srgb, var(--border) 80%, transparent)', borderBottom: '1px solid var(--border)' }}>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="xl:hidden h-7 px-3 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] text-xs font-medium text-[var(--text-h)] cursor-pointer hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] transition-colors flex items-center gap-1.5"
+              title="Customize Resume"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              Customize
+            </button>
             <button
               onClick={handleDownloadPdf}
               disabled={!!jsonError}
