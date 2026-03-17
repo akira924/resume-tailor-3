@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import type { ResumeSettings } from '../types/settings'
+import { isCustomFont, registerCustomFont } from './fontLoader'
 
 export interface PdfExperienceItem {
   company: string
@@ -45,10 +46,11 @@ export interface PdfResumeData {
 const PAGE_W = 215.9
 const PAGE_H = 279.4
 
-const VALID_FONTS = new Set(['helvetica', 'times', 'courier'])
+const BUILTIN_FONTS = new Set(['helvetica', 'times', 'courier'])
 
 function pdfFont(family: string): string {
-  return VALID_FONTS.has(family) ? family : 'helvetica'
+  if (BUILTIN_FONTS.has(family) || isCustomFont(family)) return family
+  return 'helvetica'
 }
 
 type ContactPart = { text: string; url?: string }
@@ -57,7 +59,7 @@ function normalizeUrl(raw: string): string {
   return raw.startsWith('http://') || raw.startsWith('https://') ? raw : `https://${raw}`
 }
 
-function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
+async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Promise<jsPDF> {
   const MARGIN = settings.pageLayout.pageMargin * 25.4
   const font = pdfFont(settings.primary.fontFamily)
   const bodySize = settings.primary.fontSize
@@ -73,6 +75,11 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
   const labelLH = labelSize * PT_MM * lineSpacing
 
   const doc = new jsPDF({ unit: 'mm', format: 'letter' })
+
+  if (isCustomFont(font)) {
+    await registerCustomFont(doc, font)
+  }
+
   const cw = PAGE_W - 2 * MARGIN
   let y = MARGIN + header.name.fontSize * PT_MM * CAP_RATIO
 
@@ -507,15 +514,15 @@ function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): jsPDF {
   return doc
 }
 
-export function generateResumePdf(data: PdfResumeData, settings: ResumeSettings): void {
-  const doc = buildResumePdf(data, settings)
+export async function generateResumePdf(data: PdfResumeData, settings: ResumeSettings): Promise<void> {
+  const doc = await buildResumePdf(data, settings)
   const safeName = data.name
     ? data.name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_')
     : 'Resume'
   doc.save(`${safeName}_Resume.pdf`)
 }
 
-export function generateResumePdfBlobUrl(data: PdfResumeData, settings: ResumeSettings): string {
-  const doc = buildResumePdf(data, settings)
+export async function generateResumePdfBlobUrl(data: PdfResumeData, settings: ResumeSettings): Promise<string> {
+  const doc = await buildResumePdf(data, settings)
   return doc.output('bloburl').toString()
 }

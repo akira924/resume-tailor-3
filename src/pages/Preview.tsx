@@ -26,6 +26,7 @@ const FONT_OPTIONS = [
   { value: 'helvetica', label: 'Helvetica Neue' },
   { value: 'times', label: 'Times New Roman' },
   { value: 'courier', label: 'Courier New' },
+  { value: 'segoeui', label: 'Segoe UI' },
 ]
 
 const DEFAULT_SETTINGS: ResumeSettings = {
@@ -820,18 +821,23 @@ export default function Preview() {
       return
     }
 
-    const timer = setTimeout(() => {
+    let cancelled = false
+    const timer = setTimeout(async () => {
       try {
-        const newUrl = generateResumePdfBlobUrl(resumeData, settings)
+        const newUrl = await generateResumePdfBlobUrl(resumeData, settings)
+        if (cancelled) return
         if (prevPdfUrlRef.current) URL.revokeObjectURL(prevPdfUrlRef.current)
         prevPdfUrlRef.current = newUrl
         setPdfUrl(newUrl)
       } catch {
-        setPdfUrl(null)
+        if (!cancelled) setPdfUrl(null)
       }
     }, 400)
 
-    return () => clearTimeout(timer)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [jsonParsed, resumeData, settings])
 
   useEffect(() => {
@@ -840,9 +846,9 @@ export default function Preview() {
     }
   }, [])
 
-  const handleDownloadPdf = useCallback(() => {
+  const handleDownloadPdf = useCallback(async () => {
     try {
-      generateResumePdf(resumeData, settings)
+      await generateResumePdf(resumeData, settings)
     } catch {
       /* PDF generation failed — settings or data may be invalid */
     }
