@@ -137,6 +137,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
     leftStyle: 'normal' | 'bold' | 'italic',
     leftSize: number,
     rightSize: number,
+    rightColor: string = bodyColor,
   ) {
     doc.setFont(font, leftStyle)
     doc.setFontSize(leftSize)
@@ -148,6 +149,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
 
     doc.setFont(font, 'normal')
     doc.setFontSize(rightSize)
+    doc.setTextColor(rightColor)
     const rw = doc.getTextWidth(right)
     doc.text(right, PAGE_W - MARGIN - rw, y)
 
@@ -387,18 +389,20 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
 
       const rowLH = labelLH
 
+      const metaColor = header.contactFontColor
+
       switch (experienceLayout) {
         case 'company-first':
-          twoColumnRow(exp.company, exp.location, 'bold', labelSize, bodySize)
+          twoColumnRow(exp.company, exp.location, 'bold', labelSize, bodySize, metaColor)
           y += rowLH
-          twoColumnRow(exp.role, exp.period, 'italic', labelSize, bodySize)
+          twoColumnRow(exp.role, exp.period, 'italic', labelSize, bodySize, metaColor)
           y += rowLH
           break
 
         case 'role-first':
-          twoColumnRow(exp.role, exp.period, 'bold', labelSize, bodySize)
+          twoColumnRow(exp.role, exp.period, 'bold', labelSize, bodySize, metaColor)
           y += rowLH
-          twoColumnRow(exp.company, exp.location, 'italic', labelSize, bodySize)
+          twoColumnRow(exp.company, exp.location, 'italic', labelSize, bodySize, metaColor)
           y += rowLH
           break
 
@@ -408,7 +412,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
 
           doc.setFont(font, 'normal')
           doc.setFontSize(bodySize)
-          doc.setTextColor(bodyColor)
+          doc.setTextColor(metaColor)
           const rw = doc.getTextWidth(rightText)
 
           doc.setFont(font, 'bold')
@@ -441,6 +445,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
           doc.text(drawRole, MARGIN + drawnCompW + dashW, y)
 
           doc.setFontSize(bodySize)
+          doc.setTextColor(metaColor)
           doc.text(rightText, PAGE_W - MARGIN - rw, y)
           y += rowLH
           break
@@ -479,7 +484,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
     for (const edu of data.education) {
       pageBreak(10)
 
-      twoColumnRow(edu.institution, edu.period, 'bold', labelSize, bodySize)
+      twoColumnRow(edu.institution, edu.period, 'bold', labelSize, bodySize, header.contactFontColor)
       y += labelLH
 
       doc.setFont(font, 'italic')
@@ -498,7 +503,7 @@ async function buildResumePdf(data: PdfResumeData, settings: ResumeSettings): Pr
     for (const cert of data.certifications) {
       pageBreak(10)
 
-      twoColumnRow(cert.certification, cert.date, 'bold', labelSize, bodySize)
+      twoColumnRow(cert.certification, cert.date, 'bold', labelSize, bodySize, header.contactFontColor)
       y += labelLH
 
       if (cert.institution) {
