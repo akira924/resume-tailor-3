@@ -19,6 +19,14 @@ const CUSTOM_FONTS: Record<string, CustomFontDef> = {
       { file: '/fonts/segoeuii.ttf', style: 'italic' },
     ],
   },
+  verdana: {
+    family: 'verdana',
+    variants: [
+      { file: '/fonts/verdana.ttf', style: 'normal' },
+      { file: '/fonts/verdanab.ttf', style: 'bold' },
+      { file: '/fonts/verdanai.ttf', style: 'italic' },
+    ],
+  },
 }
 
 const fontCache = new Map<string, string>()

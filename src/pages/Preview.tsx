@@ -27,6 +27,7 @@ const FONT_OPTIONS = [
   { value: 'times', label: 'Times New Roman' },
   { value: 'courier', label: 'Courier New' },
   { value: 'segoeui', label: 'Segoe UI' },
+  { value: 'verdana', label: 'Verdana' },
 ]
 
 const DEFAULT_SETTINGS: ResumeSettings = {
