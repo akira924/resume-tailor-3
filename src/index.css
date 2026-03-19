@@ -19,7 +19,7 @@
 
   font: 400 15px/1.6 var(--sans);
   letter-spacing: -0.01em;
-  color-scheme: light dark;
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -29,21 +29,20 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #0f1117;
-    --bg-surface: #1a1b23;
-    --border: #2a2b35;
-    --accent: #60a5fa;
-    --accent-hover: #93c5fd;
-    --accent-bg: rgba(96, 165, 250, 0.1);
-    --accent-border: rgba(96, 165, 250, 0.4);
-    --accent-gradient: linear-gradient(135deg, #60a5fa, #38bdf8);
-    --nav-bg: #1a1b23;
-    --footer-bg: #1a1b23;
-  }
+:root.dark {
+  color-scheme: dark;
+  --text: #9ca3af;
+  --text-h: #f3f4f6;
+  --bg: #0f1117;
+  --bg-surface: #1a1b23;
+  --border: #2a2b35;
+  --accent: #60a5fa;
+  --accent-hover: #93c5fd;
+  --accent-bg: rgba(96, 165, 250, 0.1);
+  --accent-border: rgba(96, 165, 250, 0.4);
+  --accent-gradient: linear-gradient(135deg, #60a5fa, #38bdf8);
+  --nav-bg: #1a1b23;
+  --footer-bg: #1a1b23;
 }
 
 html,
