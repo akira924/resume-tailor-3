@@ -92,7 +92,7 @@ function App() {
 
       <footer className="shrink-0 border-t border-[var(--border)] bg-[var(--footer-bg)] px-8 py-3 flex items-center justify-between text-xs text-[var(--text)]">
         <span>&copy; {new Date().getFullYear()} Resume Tailor</span>
-        <span>Built with React &amp; Tailwind CSS</span>
+        <span>Designed &amp; Developed by Akira</span>
       </footer>
     </div>
   )
